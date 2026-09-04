@@ -1,7 +1,8 @@
 # FixHome Repository Guide
 
-FixHome uses five repositories with explicit ownership boundaries. New development must be
-committed to the owning repository instead of the legacy `FixHome-SEP490` monorepo.
+FixHome uses five active repositories with explicit ownership boundaries plus the independent
+legacy `FixHome-SEP490` migration snapshot. New development must be committed to the active owning
+repository instead of the legacy snapshot.
 
 ## Repository Ownership
 
@@ -12,6 +13,7 @@ committed to the owning repository instead of the legacy `FixHome-SEP490` monore
 | [Mobi-FixHome](https://github.com/FixHome-SEP490/Mobi-FixHome) | Expo app, navigation, device storage and mobile API client | Business rules and direct AI-provider calls |
 | [AI-FixHome](https://github.com/FixHome-SEP490/AI-FixHome) | FastAPI diagnosis endpoint, schemas and provider adapters | Transactions, authorization and order state |
 | [Docs-FixHome](https://github.com/FixHome-SEP490/Docs-FixHome) | Requirements, architecture, API/database contracts, test plans and project governance | Executable application code |
+| [FixHome-SEP490](https://github.com/hoangtruong01/FixHome-SEP490) | Legacy migration source and integrated historical snapshot | Ongoing feature ownership or active deployment |
 
 The legacy [FixHome-SEP490](https://github.com/hoangtruong01/FixHome-SEP490) repository is the
 migration source. Keep it read-only after the five repository histories are published and verified.
@@ -27,7 +29,8 @@ FixHome-workspace/
 ├── Frontend-FixHome/
 ├── Mobi-FixHome/
 ├── AI-FixHome/
-└── Docs-FixHome/
+├── Docs-FixHome/
+└── FixHome-SEP490/       # Legacy snapshot; keep read-only for feature work
 ```
 
 Each directory is an independent Git repository. Do not add a `.git` directory above them and do
@@ -37,11 +40,12 @@ not copy one repository inside another.
 
 | Repository | Runtime | Verification |
 |------------|---------|--------------|
-| Backend | Node 20.19+ (`.nvmrc`) | `npm run lint`, `npm test`, `npm run build` |
-| Frontend | Node 20.19+ (`.nvmrc`) | `npm run typecheck`, `npm run build` |
-| Mobile | Node 22.13+ (`.nvmrc`) | `npm run check:expo`, `npm run typecheck` |
-| AI | Python 3.11 (`.python-version`) | `pytest`, `python -m compileall app tests` |
-| Docs | UTF-8 Markdown | Review links and architecture consistency |
+| Backend | Node 20.19+ (`.nvmrc`) | lint, typecheck, unit/E2E test, build |
+| Frontend | Node 20.19+ (`.nvmrc`) | lint, typecheck, unit test, build |
+| Mobile | Node 22.13+ (`.nvmrc`) | Expo check, lint, typecheck, Jest |
+| AI | Python 3.11 (`.python-version`) | Ruff, Pytest, import/compile/startup |
+| Docs | Node 20+ and UTF-8 Markdown | Markdown, local links, governance validation |
+| Legacy snapshot | Per embedded project | Repository workflow validates each snapshot independently |
 
 ## Local Startup Order
 
@@ -64,7 +68,7 @@ When an API, enum, environment variable, database contract, or AI schema changes
 ## Initial Publication Checklist
 
 - Commit the prepared files in each repository.
-- Push `main` and create `develop` only if the team will actively use the documented Git flow.
+- Push `main` and create `development`; retain `develop` only while existing integrations need it.
 - Protect `main` and require each repository's CI check.
-- Verify all five README links after the first push.
+- Verify README and governance links in all six independent repositories.
 - Mark the legacy monorepo read-only only after all five default branches and CI workflows exist.

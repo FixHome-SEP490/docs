@@ -284,7 +284,7 @@ Verify that Backend DTOs, Web API types, and Mobile API types are **consistent**
 
 QA/QC verifies the chain:
 
-```
+```text
 Requirement → Acceptance Criteria → Implementation → Database → API → Web/Mobile → Test
 ```
 
@@ -305,7 +305,7 @@ Check:
 
 Simulate User Acceptance Testing using Given-When-Then format:
 
-```
+```text
 Scenario: <description>
 
 Given:

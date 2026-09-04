@@ -129,7 +129,7 @@ Homeowners face difficulty finding reliable, verified repair technicians. Existi
 
 ## 8. System Architecture
 
-```
+```text
 Web (Vue.js) ──────┐
                     │
 Mobile (Expo) ─────┼──► NestJS Backend API ──► PostgreSQL
@@ -259,7 +259,7 @@ and cross-repository change coordination.
 
 ## 17. AI Diagnosis Flow
 
-```
+```text
 Customer (Mobile/Web)
     │
     ├── description (text)
@@ -322,7 +322,7 @@ DiagnosisResponse {
 | **Key Data** | Service, time, address, description, AI result | Technician, status, quotation, evidence, timestamps |
 | **Status** | PENDING, CONFIRMED, CANCELLED | PENDING_CONFIRMATION, ACCEPTED, EN_ROUTE, UNDER_REPAIR, COMPLETED, CANCELLED |
 
-```
+```text
 Customer creates Booking
         ↓
 Booking validated / confirmed
@@ -349,7 +349,7 @@ Completion + Review
 | `CANCELLED` | Order cancelled (terminal) |
 
 ### Valid Transitions
-```
+```text
 PENDING_CONFIRMATION → ACCEPTED | CANCELLED
 ACCEPTED → EN_ROUTE | CANCELLED
 EN_ROUTE → UNDER_REPAIR

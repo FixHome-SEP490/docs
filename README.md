@@ -34,7 +34,7 @@
 
 ## Architecture Overview
 
-```
+```text
 Web ──────┐
           │
 Mobile ───┼──> NestJS Backend ───> PostgreSQL
@@ -62,3 +62,18 @@ Mobile ───┼──> NestJS Backend ───> PostgreSQL
 | [Mobi-FixHome](https://github.com/FixHome-SEP490/Mobi-FixHome) | Expo mobile application |
 | [AI-FixHome](https://github.com/FixHome-SEP490/AI-FixHome) | FastAPI AI diagnosis service |
 | [Docs-FixHome](https://github.com/FixHome-SEP490/Docs-FixHome) | Requirements, architecture, contracts, testing, and governance |
+
+## Engineering Governance
+
+Read [AGENTS.md](AGENTS.md) and the repository-specific
+[AI Technical Guide](docs/AI-TECHNICAL-GUIDE.md) before editing. Validate documentation locally:
+
+```bash
+npm ci
+npm run lint
+npm run check:links
+npm run validate
+```
+
+The independent Docs CI treats Markdown style, missing local links, and governance structure as
+blocking failures.

@@ -7,21 +7,21 @@
 ## Current Phase
 
 **Polyrepo Foundation Complete** — Project scaffolding is split by ownership and ready for the
-first commits in each new repository. Feature implementation starts with Authentication after the
-five repositories are published and protected.
+first feature work in each owning repository. Feature implementation starts with Authentication
+after maintainers configure the `development` branches and required CI branch protection.
 
 ## Project Health
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Backend | ✅ Builds, OxLint passes, 15 unit + 2 E2E tests pass | Standalone setup verified; modules scaffolded |
-| Web | ✅ TypeCheck passes, Build passes | Standalone Vite setup verified |
-| Mobile | ✅ Expo dependency check and TypeCheck pass | SDK 57 requires Node 22.13+ |
-| AI Service | ✅ 2 tests pass, compiles | Verified locally on Python 3.14; CI targets Python 3.11 |
+| Backend | ✅ Lint, TypeCheck, Build, 15 unit + 2 E2E tests pass | Standalone setup verified; modules scaffolded |
+| Web | ✅ Lint, TypeCheck, 2 unit tests, Build pass | ESLint and Vitest baseline configured |
+| Mobile | ✅ Expo check, Lint, TypeCheck, 2 unit tests pass | SDK 57 CI requires Node 22.13+ |
+| AI Service | ✅ Ruff, 2 tests, import/compile/startup pass | Verified locally on Python 3.14; CI targets Python 3.11 |
 | Database | ⚠️ Foundation fixed | data-source.ts created, migrations dir created, no migrations yet |
-| Testing | ⚠️ Partial | Backend has Vitest; Web/Mobile have no test frameworks |
-| Documentation | ✅ Polyrepo guide and governance updated | Docs-FixHome is the cross-system source of truth |
-| CI | ✅ Independent workflows configured | Backend, Frontend, Mobile and AI each own CI |
+| Testing | ⚠️ Baseline | All executable owning repos have a runner; feature coverage remains sparse |
+| Documentation | ✅ Markdown, links, governance checks pass | Docs-FixHome is the cross-system source of truth |
+| CI | ✅ Independent workflows configured | Five active repos plus legacy snapshot each own CI |
 
 ---
 
@@ -315,6 +315,18 @@ _No tasks currently blocked._
 ---
 
 ## Recently Completed
+
+### SETUP-003: Repository-Specific AI Governance and CI Quality Gates
+
+- **Completed**: 2026-09-04
+- **Summary**:
+  - Added repository-specific `docs/AI-TECHNICAL-GUIDE.md` to all six independent repositories
+  - Made each root `AGENTS.md` enforce the mandatory analysis/review/validation workflow
+  - Completed Backend typecheck and E2E gates, Frontend ESLint/Vitest, Mobile ESLint/Jest/Expo
+    compatibility, AI Ruff/import/startup, and Docs Markdown/link/governance validation
+  - Audited `FixHome-SEP490` as a legacy integration snapshot and kept active feature ownership in
+    the five split repositories
+  - Configured CI triggers for `main`, `development`, and the retained `develop` compatibility alias
 
 ### SETUP-002: Split Monorepo into Five Independent Repositories
 

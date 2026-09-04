@@ -4,24 +4,24 @@
 
 ### Branch Strategy
 
-```
+```text
 main              # Production-ready code
-develop           # Integration branch
+development       # Integration branch (`develop` is a temporary compatibility alias)
 feature/<name>    # New features (e.g., feature/auth-login)
 fix/<name>        # Bug fixes (e.g., fix/booking-validation)
 ```
 
 ### Workflow
 
-1. Create branch from `develop`
+1. Create branch from `development`
 2. Implement changes
-3. Create Pull Request to `develop`
+3. Create Pull Request to `development`
 4. Code review by at least 1 team member
 5. Merge after approval
 
 ### Commit Convention (Conventional Commits)
 
-```
+```text
 feat: add user registration endpoint
 fix: correct booking date validation
 refactor: extract base entity
@@ -89,7 +89,7 @@ Format: `<type>: <description>`
 
 ### RESTful Endpoints
 
-```
+```text
 GET    /api/v1/resources           # List (with pagination)
 GET    /api/v1/resources/:id       # Get by ID
 POST   /api/v1/resources           # Create
@@ -161,7 +161,7 @@ DELETE /api/v1/resources/:id       # Delete
 
 ### Template
 
-```
+```markdown
 ## What
 Brief description of changes.
 
