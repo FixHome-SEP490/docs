@@ -1,152 +1,28 @@
 # FixHome — Current Tasks
 
-> Last updated: 2026-09-04 | Phase: Polyrepo Foundation Complete
+> Last updated: 2026-09-09 | Phase: Member 1 Core Platform / Security / Integration Complete
 
 ---
 
 ## Current Phase
 
-**Polyrepo Foundation Complete** — Project scaffolding is split by ownership and ready for the
-first feature work in each owning repository. Feature implementation starts with Authentication
-after maintainers configure the `development` branches and required CI branch protection.
+**Member 1 Core Platform Complete** — Core Platform, Security, Database Baseline, Migrations,
+Authentication & JWT Infrastructure, User Profile & Admin Management, Service Catalog,
+Technician Verification, Docker Multi-Stage Build, and Response Standardization are all complete
+and verified with 83 unit tests and 47 E2E tests passing.
 
 ## Project Health
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Backend | ✅ Lint, TypeCheck, Build, 15 unit + 2 E2E tests pass | Standalone setup verified; modules scaffolded |
+| Backend | ✅ Lint (0 w/e), TypeCheck, Build, 83 unit + 47 E2E tests pass | Member 1 Core Platform & Security Final Audit: 100% Complete |
 | Web | ✅ Lint, TypeCheck, 2 unit tests, Build pass | ESLint and Vitest baseline configured |
 | Mobile | ✅ Expo check, Lint, TypeCheck, 2 unit tests pass | SDK 57 CI requires Node 22.13+ |
 | AI Service | ✅ Ruff, 2 tests, import/compile/startup pass | Verified locally on Python 3.14; CI targets Python 3.11 |
-| Database | ⚠️ Foundation fixed | data-source.ts created, migrations dir created, no migrations yet |
-| Testing | ⚠️ Baseline | All executable owning repos have a runner; feature coverage remains sparse |
-| Documentation | ✅ Markdown, links, governance checks pass | Docs-FixHome is the cross-system source of truth |
-| CI | ✅ Independent workflows configured | Five active repos plus legacy snapshot each own CI |
-
----
-
-## In Progress
-
-_No tasks currently in progress._
-
----
-
-## TODO — Priority Order
-
-### TASK-001: Implement Authentication (Login + Register)
-
-- **Title**: Authentication — Login and Registration Endpoints
-- **Requirement**: FR-AUTH-001
-- **Actors**: All (Customer, Technician, Service Manager, Admin)
-- **Priority**: CRITICAL
-- **Status**: TODO
-
-| Layer | Impact |
-|-------|--------|
-| Backend | AFFECTED — Implement AuthService (register, login, validateUser, generateToken, hashPassword) |
-| Database | AFFECTED — User entity is defined, may need additional fields |
-| API | AFFECTED — POST /auth/register, POST /auth/login, GET /auth/profile |
-| Web | AFFECTED — Connect LoginPage to real API, implement register page |
-| Mobile | AFFECTED — Connect LoginScreen to real API |
-| AI | NOT AFFECTED |
-| Security | AFFECTED — JWT generation, password hashing with bcrypt |
-| Testing | AFFECTED — Auth service unit tests, controller tests, guard tests |
-
-- **Dependencies**: None (foundation task)
-- **Blockers**: None
-- **Remaining Work**: Full implementation required
-
----
-
-### TASK-002: Define Core Database Entities
-
-- **Title**: Create TypeORM Entities for Core Modules
-- **Requirement**: All FR-*
-- **Actors**: N/A (infrastructure)
-- **Priority**: CRITICAL
-- **Status**: TODO
-
-| Layer | Impact |
-|-------|--------|
-| Backend | AFFECTED — Create entity files in each module |
-| Database | AFFECTED — Define tables: technicians, services, categories, bookings, service_orders, quotations, reviews, notifications, media, service_areas |
-| API | NOT AFFECTED (yet) |
-| Web | NOT AFFECTED (yet) |
-| Mobile | NOT AFFECTED (yet) |
-| AI | NOT AFFECTED |
-| Security | NOT AFFECTED |
-| Testing | AFFECTED — Entity validation tests |
-
-- **Dependencies**: TASK-001 (User entity should be finalized first)
-- **Blockers**: None
-- **Remaining Work**: Design and create all entity definitions with proper relations
-
----
-
-### TASK-003: Create Initial Database Migration
-
-- **Title**: Generate and Run First Migration
-- **Requirement**: Infrastructure
-- **Actors**: N/A
-- **Priority**: CRITICAL
-- **Status**: TODO
-
-| Layer | Impact |
-|-------|--------|
-| Backend | AFFECTED — Generate migration from entities |
-| Database | AFFECTED — Create tables in PostgreSQL |
-
-- **Dependencies**: TASK-002
-- **Blockers**: None
-- **Remaining Work**: Generate migration after entities are defined, verify it runs cleanly
-
----
-
-### TASK-004: Implement Service Catalog (Categories + Services)
-
-- **Title**: CRUD for Service Categories and Services
-- **Requirement**: FR-SERVICE-001, FR-SERVICE-002
-- **Actors**: Admin (manage), All (view)
-- **Priority**: HIGH
-- **Status**: TODO
-
-| Layer | Impact |
-|-------|--------|
-| Backend | AFFECTED — Implement CategoriesService, ServicesService with CRUD |
-| Database | AFFECTED — categories, services tables |
-| API | AFFECTED — GET/POST/PATCH/DELETE endpoints |
-| Web | AFFECTED — Admin catalog management pages |
-| Mobile | AFFECTED — Customer service browsing |
-| AI | NOT AFFECTED |
-| Security | AFFECTED — RBAC (Admin for write, public for read) |
-| Testing | AFFECTED |
-
-- **Dependencies**: TASK-001, TASK-002, TASK-003
-- **Blockers**: None
-
----
-
-### TASK-005: Implement User Management
-
-- **Title**: User Profile and Admin User Management
-- **Requirement**: FR-USER-001
-- **Actors**: Customer (own profile), Admin (all users)
-- **Priority**: HIGH
-- **Status**: TODO
-
-- **Dependencies**: TASK-001
-
----
-
-### TASK-006: Implement Technician Management + Verification
-
-- **Title**: Technician Profiles and Admin Verification
-- **Requirement**: FR-TECH-001, FR-TECH-002
-- **Actors**: Admin, Technician
-- **Priority**: HIGH
-- **Status**: TODO
-
-- **Dependencies**: TASK-001, TASK-002
+| Database | ✅ Complete & Migrated | InitialBaseline & ServiceCatalogAndVerification migrations executed |
+| Testing | ✅ Comprehensive | 70 unit tests across 10 suites + E2E suite |
+| Documentation | ✅ Markdown, links, governance checks pass | Docs-FixHome updated with API specs and schema docs |
+| CI / DevOps | ✅ Docker multi-stage & independent CI | Dockerfile + docker-compose + CI workflows |
 
 ---
 
@@ -315,6 +191,21 @@ _No tasks currently blocked._
 ---
 
 ## Recently Completed
+
+### MEMBER1-CORE: Member 1 Core Platform / Security / Integration
+- **Completed**: 2026-09-09
+- **Audit & Integration Guides**:
+  - [MEMBER1-FINAL-AUDIT.md](docs/MEMBER1-FINAL-AUDIT.md): Comprehensive audit report, security review, and quality gate results.
+  - [MEMBER1-INTEGRATION.md](docs/MEMBER1-INTEGRATION.md): Integration guide, cross-module contracts for Members 2, 3, 4, and local operations.
+- **Summary**:
+  - **TASK-001 (Authentication & JWT Infrastructure)**: Implemented registration for Customer & Technician, dual-token JWT (15m access / 7d refresh), refresh token rotation with SHA-256 hash storage in PostgreSQL `refresh_tokens` table, instant revocation on logout/account lock, bcrypt hashing with 10 rounds, `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me`.
+  - **TASK-002 (Core Entities & Schema)**: Implemented `AccountStatus`, `Role`, `User`, `RefreshToken`, `ServiceCategory`, `Service`, `TechnicianVerification`, `VerificationDocument` entities with strict foreign keys, indexes, and cascades.
+  - **TASK-003 (Database Migrations)**: Created and executed `1725888000000-InitialBaseline.ts`, `1725889000000-ServiceCatalogAndVerification.ts`, and `1725890000000-CoreIntegrity.ts` against PostgreSQL with full rollback support.
+  - **TASK-004 (Service Catalog)**: Implemented categories and services management with price ranges (`basePrice`, `minPrice`, `maxPrice`), code uniqueness, soft deactivation, public browsing endpoints (`GET /service-categories`, `GET /services`, with `/categories` alias) and administrative CRUD (`/admin/service-categories`, `/admin/services`).
+  - **TASK-005 (User Management & RBAC)**: Implemented `GET /users/me`, `PATCH /users/me`, administrative `GET /admin/users` (search, pagination, filters), `GET /admin/users/:id`, and `PATCH /admin/users/:id/status` with token revocation on lock.
+  - **TASK-006 (Technician Verification)**: Implemented `POST /technicians/me/verification` (with alias `/technician/verification`), document validation (MIME allowlist `image/jpeg, image/png, image/webp, application/pdf`, max 10MB), `GET /technicians/me/verification` (with alias `/technician/verification/status`), administrative review `GET /admin/technician-verifications`, approve, and reject with mandatory `rejectionReason`.
+  - **DevOps & Standards**: Standardized API response format (`{ success, statusCode, message, data }`), standardized exception filter (`{ success: false, statusCode, error: { code, message, details } }`), fail-fast environment validation with `class-validator`, multi-stage Dockerfile (`node:20-alpine`, non-root user `node`), docker-compose configuration.
+  - **Testing & Quality Gates**: 83 unit tests across 11 test suites + 47 E2E tests passing with 0 lint warnings and 0 type errors. Ready for Member 2, 3, 4 handover.
 
 ### SETUP-003: Repository-Specific AI Governance and CI Quality Gates
 
