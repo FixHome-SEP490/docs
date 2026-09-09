@@ -29,6 +29,8 @@
 - [AI_DEVELOPMENT_WORKFLOW.md](AI_DEVELOPMENT_WORKFLOW.md) — Quy trình phát triển với AI
 - [CURRENT_TASKS.md](CURRENT_TASKS.md) — Trạng thái và backlog hiện tại
 - [REPOSITORY_GUIDE.md](REPOSITORY_GUIDE.md) — Bản đồ repo và hướng dẫn setup local
+- [MEMBER1-FINAL-AUDIT.md](docs/MEMBER1-FINAL-AUDIT.md) — Member 1 Final Audit Report & Quality Gate
+- [MEMBER1-INTEGRATION.md](docs/MEMBER1-INTEGRATION.md) — Member 1 Integration Guide & Cross-module Contracts
 - [AGENTS.md](AGENTS.md) — Hướng dẫn cho AI coding agents
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Quy ước phát triển
 
