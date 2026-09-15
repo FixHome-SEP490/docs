@@ -1,28 +1,32 @@
 # FixHome – Architecture Overview
 
+> **Version**: Spec v1.4 Baseline  
+> **Last Updated**: 2026-09-16  
+
 ## 1. System Architecture Diagram
 
 ```text
 +------------------------------------+         +--------------------------------------+
-|             Vue.js Web             |         |          React Native Mobile         |
-|  (Admin & Service Manager Portal)  |         |      (Customer & Technician App)     |
+|          Vue.js 3 Web Client       |         |          React Native Mobile         |
+|  (Customer, Tech, Manager, Admin)  |         |      (Customer & Technician App)     |
+|   32+ pages, Warm Orange System    |         |        Expo SDK 57, Zustand          |
 +------------------+-----------------+         +-------------------+------------------+
                    |                                               |
                    +-----------------------+-----------------------+
-                                           | REST API (JWT + RBAC)
+                                           | REST API (JWT Dual-Token + RBAC)
                                            v
                    +-----------------------------------------------+
                    |              NestJS Backend API               |
-                   |           (Modular Architecture)              |
+                   |      (16 Modular Domains, TypeORM, Vitest)    |
                    +-----------+-----------------------+-----------+
                                |                       |
                   TypeORM / SQL|                       | HTTP Client (Axios)
                                v                       v
                    +-----------+----------+  +---------+-----------+
                    | PostgreSQL Database  |  |  FastAPI AI Service |
-                   |     (Postgres 16)    |  +---------+-----------+
-                   +----------------------+            |
-                                                       | Provider Abstraction
+                   |   (PostgreSQL 16,    |  +---------+-----------+
+                   |    14 Migrations)    |            |
+                   +----------------------+            | Provider Abstraction
                                                        v
                                              +---------+-----------+
                                              | Gemini / OpenAI API |
@@ -35,10 +39,10 @@
 
 | Actor | Nền tảng chính | Trách nhiệm cốt lõi |
 | :--- | :--- | :--- |
-| **Customer** | Mobile App | Đăng ký, chụp ảnh chẩn đoán AI, đặt lịch Booking, duyệt báo giá, theo dõi trạng thái, đánh giá dịch vụ |
-| **Technician** | Mobile App | Nhận công việc được phân công, cập nhật trạng thái đơn (Accepted -> En Route -> Under Repair -> Completed), tạo báo giá khảo sát thực tế |
-| **Service Manager** | Web Admin Portal | Tiếp nhận Booking, phân công thợ kỹ thuật (theo AI gợi ý), duyệt báo giá, can thiệp xử lý sự cố |
-| **Admin** | Web Admin Portal | Quản lý danh mục dịch vụ, bảng giá gốc, quản lý tài khoản, cấu hình hệ thống, xem báo cáo tổng thể |
+| **Customer** | Web & Mobile App | Đăng ký, chụp ảnh chẩn đoán AI, đặt lịch Booking 5 bước, chọn thợ shortlist, đổi lịch hẹn, duyệt báo giá & phát sinh, nghiệm thu hoàn tất, xác nhận thanh toán tiền mặt, đánh giá dịch vụ và yêu cầu bảo hành. |
+| **Technician** | Web & Mobile App | Quản lý hồ sơ & chứng chỉ KYC, thiết lập ca làm việc trong tuần, nhận lời mời việc, rút khỏi đơn khi có sự cố trước khi đến nơi, di chuyển, check-in GPS, tải ảnh bằng chứng trước/sau sửa, tạo báo giá khảo sát thực tế, quyết toán công nợ FixHome. |
+| **Service Manager** | Web Admin Portal | Giám sát vận hành đơn hàng, điều phối thợ thủ công khi cần, can thiệp xử lý sự cố / tranh chấp, duyệt báo giá bất thường, đối soát thanh toán tiền mặt. |
+| **Admin** | Web Admin Portal | Quản lý danh mục dịch vụ & giá gốc, quản lý danh mục linh kiện chính hãng, quản lý tài khoản người dùng, phê duyệt KYC kỹ thuật viên, cấu hình hệ thống, xem báo cáo tổng thể. |
 
 ---
 
@@ -50,26 +54,30 @@
 
 ---
 
-## 4. Lifecycle & State Machine của Service Order
+## 4. Lifecycle & State Machine của Service Order (D-22)
 
 ```text
-[ PENDING_CONFIRMATION ] ──(Cancel)──> [ CANCELLED ] (Terminal)
-          │
-      (Accepted)
-          ↓
-     [ ACCEPTED ] ─────────(Cancel)──> [ CANCELLED ] (Terminal)
-          │
-      (Technician En Route)
-          ↓
-     [ EN_ROUTE ]
-          │
-      (Technician Under Repair)
-          ↓
-   [ UNDER_REPAIR ]
-          │
-      (Technician Completed)
-          ↓
-    [ COMPLETED ] (Terminal)
+         [ Customer Booking: REQUESTED ]
+                        │
+             (Sequential Invitation)
+                        ↓
+            [ Technician ACCEPT ] ──(Rút đơn trước khi đến)──> [ RE-DISPATCHING ]
+                        │
+          (Tạo đơn: ACCEPTED)
+                        │
+               (Technician Starts)
+                        ↓
+                  [ EN_ROUTE ] ────(Rút đơn trước khi đến)──> [ RE-DISPATCHING ]
+                        │
+            (GPS Check-in + BEFORE Photo)
+                        ↓
+                [ UNDER_REPAIR ] ──(Hủy tùy tiện: BỊ CHẶN, yêu cầu Quản lý hỗ trợ)
+                        │
+          (Thợ hoàn thành sửa + Báo giá duyệt)
+          (AFTER Photo + Thợ báo xong)
+          (Khách nghiệm thu + Trả tiền mặt 2 chiều)
+                        ↓
+                  [ COMPLETED ] (Terminal)
 ```
 
-Backend kiểm soát chặt chẽ tính hợp lệ của mọi bước chuyển trạng thái (State Transition Validation) và phân quyền theo từng vai trò (Customer, Technician, Service Manager, Admin).
+Backend kiểm soát chặt chẽ tính hợp lệ của mọi bước chuyển trạng thái (State Transition Validation) và áp dụng chuỗi 5 lớp bảo vệ (Guards chain) cùng khóa dòng cơ sở dữ liệu (`pessimistic_write`).

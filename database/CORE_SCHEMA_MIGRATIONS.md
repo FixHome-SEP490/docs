@@ -1,122 +1,97 @@
 # FixHome — Core Database Schema & Migrations
 
-> **Owner**: Member 1 (Core Platform / Security / Integration)  
-> **Status**: INITIAL BASELINE EXECUTED  
-> **Last Updated**: 2026-09-09
+> **Owner**: Core Platform & Backend Team  
+> **Status**: 14 MIGRATIONS EXECUTED & VERIFIED  
+> **Last Updated**: 2026-09-16 (Aligned with Spec v1.4)
 
-Tài liệu này quy chuẩn cấu trúc cơ sở dữ liệu nền tảng cho danh tính (Identity) và phiên xác thực (Authentication Session) của hệ thống FixHome.
+Tài liệu này quy chuẩn cấu trúc cơ sở dữ liệu nền tảng và danh mục toàn bộ các bản migration của hệ thống FixHome trên PostgreSQL 16.
 
 ---
 
 ## 1. Nguyên Tắc Thiết Kế Database (Database Principles)
 
-1. **Khóa chính**: Luôn là `id` UUID v4 sinh tự động (`uuid_generate_v4()`).
+1. **Khóa chính**: Luôn là `id` kiểu `UUID` sinh tự động (`uuid_generate_v4()`).
 2. **Kế thừa BaseEntity**: Mọi bảng đều có `created_at` và `updated_at` kiểu `TIMESTAMP WITH TIME ZONE DEFAULT now()`.
 3. **Naming Standards**:
-   - Tên bảng: `snake_case`, số nhiều (ví dụ: `users`, `refresh_tokens`).
-   - Tên cột: `snake_case` (ví dụ: `password_hash`, `token_hash`, `device_info`).
-   - Khóa ngoại: `<tên_bảng_số_ít>_id` (ví dụ: `user_id`).
+   - Tên bảng: `snake_case`, số nhiều (ví dụ: `users`, `service_orders`, `quotations`).
+   - Tên cột: `snake_case` (ví dụ: `password_hash`, `scheduled_date`, `is_fixhome_provided`).
+   - Khóa ngoại: `<tên_bảng_số_ít>_id` (ví dụ: `service_order_id`, `technician_id`).
 4. **Không bật `synchronize: true` trên Production / Staging**: Mọi thay đổi schema đều phải qua TypeORM migration.
+5. **Giao dịch và Khóa hàng (Pessimistic Locking)**: Sử dụng transaction với khóa bi quan (`pessimistic_write`) khi KTV nhận việc hoặc cập nhật trạng thái đơn dịch vụ để loại bỏ hoàn toàn race condition.
 
 ---
 
-## 2. Các Bảng Thuộc Phạm Vi Member 1
+## 2. Toàn Bộ 14 TypeORM Migrations Đã Thực Thi
 
-### A. Bảng `users`
-Bảng quản lý tài khoản người dùng của toàn bộ hệ thống (Customer, Technician, Service Manager, Admin).
+| STT | File Migration | Nội dung & Bảng thay đổi |
+| :---: | :--- | :--- |
+| 1 | `1725888000000-InitialBaseline.ts` | Bảng `users`, enum `users_role_enum`, bảng phiên `refresh_tokens`, extension `uuid-ossp`. |
+| 2 | `1725889000000-ServiceCatalogAndVerification.ts` | Bảng danh mục dịch vụ `service_categories`, dịch vụ `services`, hồ sơ xác minh KYC `technician_verifications`, `verification_documents`. |
+| 3 | `1725890000000-CoreIntegrity.ts` | Ràng buộc khóa ngoại nghiêm ngặt, chỉ mục duy nhất cho email/phone. |
+| 4 | `1725891000000-Phase0Bootstrap.ts` | Bảng cấu hình hệ thống `system_settings` và seed tài khoản mặc định (Admin, Manager, Customer, Tech). |
+| 5 | `1725892000000-Phase1AuthUsers.ts` | Mở rộng thông tin người dùng, sổ địa chỉ `customer_addresses`. |
+| 6 | `1725893000000-Phase2ServiceCatalogAndAreas.ts` | Bảng khu vực hoạt động `service_areas` với tọa độ đa giác (boundary polygons). |
+| 7 | `1725894000000-Phase3to8BusinessLogic.ts` | Bảng `bookings`, `invitations`, `service_orders`, `quotations`, `additional_costs`, `reviews`, `notifications`. |
+| 8 | `1725895000000-SpecV12PricingAndSettlement.ts` | Cột `pricing_mode` trong `services`, bảng quyết toán `cash_settlements`, công nợ `commission_dues`, bảo hành `warranties`, `warranty_claims`. |
+| 9 | `1725896000000-SpecV14GapFixes.ts` | Bảng linh kiện chính hãng `parts`, cờ `is_fixhome_provided`, snapshot bảo hành linh kiện ngoài `part_warranty_covered`. |
+| 10 | `1725897000000-Dev1Integrity.ts` | Ràng buộc toàn vẹn State Machine D-22: `ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED`. |
+| 11 | `1725898000000-Dev1EvidenceAndDueMetadata.ts` | Bảng ảnh bằng chứng `order_evidences` (`BEFORE`/`AFTER`), bảng công nợ tổng hợp `platform_dues`. |
+| 12 | `1725899000000-CustomerServiceAreaAndCodes.ts` | Cột mã hành chính chuẩn hóa `province_code`, `district_code` phục vụ matching. |
+| 13 | `1725900000000-TechnicianRoleEnhancements.ts` | Bảng ca làm việc thợ `technician_schedules`, bảng lý do rút đơn `technician_withdrawals`, bảng lịch sử `order_status_history`. |
+| 14 | `1725901000000-DropDev1ChatTables.ts` | **Dọn dẹp an toàn:** Drop bảng `chat_messages` và `conversations` của Dev 1, xác nhận Chat ngoài scope Dev 1. |
 
-| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+---
+
+## 3. Chi Tiết Các Bảng Nghiệp Vụ Cốt Lõi
+
+### 3.1 Bảng `service_orders`
+| Cột | Kiểu | Ràng buộc | Mô tả |
 | :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PRIMARY KEY` | Khóa chính sinh tự động |
-| `email` | `VARCHAR` | `NOT NULL`, `UNIQUE INDEX` | Email đăng nhập duy nhất |
-| `password_hash` | `VARCHAR` | `NOT NULL` | Mật khẩu băm (bcrypt) |
-| `full_name` | `VARCHAR` | `NOT NULL` | Họ và tên người dùng |
-| `phone_number` | `VARCHAR` | `NULLABLE`, `UNIQUE INDEX` | Số điện thoại duy nhất (khi có) |
-| `role` | `users_role_enum` | `DEFAULT 'customer'`, `INDEX` | `customer`, `technician`, `service_manager`, `admin` |
-| `status` | `users_status_enum` | `DEFAULT 'active'`, `INDEX` | `active`, `locked`, `suspended` |
-| `is_active` | `BOOLEAN` | `DEFAULT true` | Cờ kích hoạt nhanh |
-| `created_at` | `TIMESTAMPTZ` | `DEFAULT now()` | Thời gian tạo |
-| `updated_at` | `TIMESTAMPTZ` | `DEFAULT now()` | Thời gian cập nhật |
+| `id` | `UUID` | `PRIMARY KEY` | Khóa chính |
+| `booking_id` | `UUID` | `FK bookings(id)` | Tham chiếu Booking khởi tạo |
+| `technician_id`| `UUID` | `FK users(id)` | Kỹ thuật viên phụ trách |
+| `status` | `VARCHAR(30)` | `NOT NULL` | `ACCEPTED`, `EN_ROUTE`, `UNDER_REPAIR`, `COMPLETED`, `CANCELLED` |
+| `pricing_mode` | `VARCHAR(30)` | `NOT NULL` | `FIXED_PRICE` hoặc `INSPECTION_REQUIRED` |
+| `final_labor_cost` | `NUMERIC(12,2)` | `DEFAULT 0` | Tiền công cuối cùng |
+| `final_parts_cost` | `NUMERIC(12,2)` | `DEFAULT 0` | Tiền linh kiện cuối cùng |
+| `total_amount` | `NUMERIC(12,2)` | `DEFAULT 0` | Tổng giá trị đơn hàng |
+| `payment_status` | `VARCHAR(30)` | `DEFAULT 'PENDING'` | `PENDING`, `PAID` (sau xác nhận tiền mặt 2 chiều) |
+| `payment_method` | `VARCHAR(30)` | `DEFAULT 'CASH'` | Phương thức thanh toán |
 
-### B. Bảng `refresh_tokens`
-Bảng lưu trữ phiên làm việc và mã Refresh Token phục vụ xác thực đa thiết bị (Web + Mobile) và hỗ trợ thu hồi tức thì khi Logout hoặc khóa tài khoản.
-
-| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+### 3.2 Bảng `order_evidences`
+| Cột | Kiểu | Ràng buộc | Mô tả |
 | :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PRIMARY KEY` | Khóa chính sinh tự động |
-| `user_id` | `UUID` | `NOT NULL`, `FK users(id) ON DELETE CASCADE`, `INDEX` | Tham chiếu người dùng sở hữu token |
-| `token_hash` | `VARCHAR` | `NOT NULL`, `INDEX` | SHA-256 hash của chuỗi Refresh Token (không lưu plaintext) |
-| `expires_at` | `TIMESTAMPTZ` | `NOT NULL` | Thời điểm token hết hạn |
-| `is_revoked` | `BOOLEAN` | `DEFAULT false` | Cờ thu hồi token |
-| `device_info` | `VARCHAR` | `NULLABLE` | Thông tin thiết bị (ví dụ: Mobile App, Chrome on Windows) |
-| `created_at` | `TIMESTAMPTZ` | `DEFAULT now()` | Thời gian cấp token |
-| `updated_at` | `TIMESTAMPTZ` | `DEFAULT now()` | Thời gian cập nhật |
+| `id` | `UUID` | `PRIMARY KEY` | Khóa chính |
+| `service_order_id` | `UUID` | `FK service_orders(id) ON DELETE CASCADE` | Tham chiếu đơn hàng |
+| `evidence_type` | `VARCHAR(20)` | `NOT NULL` | `'BEFORE'` (trước sửa) hoặc `'AFTER'` (sau sửa) |
+| `file_url` | `VARCHAR(500)` | `NOT NULL` | Đường dẫn ảnh an toàn |
+| `caption` | `TEXT` | `NULLABLE` | Chú thích tình trạng |
+| `uploaded_by` | `UUID` | `FK users(id)` | Người tải lên |
+
+### 3.3 Bảng `order_status_history`
+| Cột | Kiểu | Ràng buộc | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY` | Khóa chính |
+| `service_order_id` | `UUID` | `FK service_orders(id) ON DELETE CASCADE` | Tham chiếu đơn hàng |
+| `from_status` | `VARCHAR(30)` | `NULLABLE` | Trạng thái trước |
+| `to_status` | `VARCHAR(30)` | `NOT NULL` | Trạng thái mới |
+| `actor_name` | `VARCHAR(100)`| `NULLABLE` | Tên người thực hiện hành động |
+| `note` | `TEXT` | `NULLABLE` | Ghi chú lý do chuyển trạng thái |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT now()` | Mốc thời gian thực tế ghi nhận |
 
 ---
 
-## 3. Lệnh Quản Lý Migration
+## 4. Lệnh Quản Lý Migration CLI
 
-TypeORM migration được cấu hình chạy qua CLI độc lập tại `src/database/data-source.ts`:
+Toàn bộ migration được quản lý qua `src/database/data-source.ts` của Backend:
 
-- **Chạy toàn bộ migration chưa chạy**:
-  ```bash
-  npm run migration:run
-  ```
-- **Kiểm tra danh sách trạng thái migrations**:
-  ```bash
-  npx typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts
-  ```
-- **Hoàn tác migration gần nhất**:
-  ```bash
-  npm run migration:revert
-  ```
-- **Sinh migration tự động từ entities**:
-  ```bash
-  npx typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts src/database/migrations/<MigrationName>
-  ```
+```bash
+# Xem trạng thái tất cả migrations
+npx typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts
 
----
+# Chạy tất cả các migrations còn thiếu
+npm run migration:run
 
-## 4. Migration: ServiceCatalogAndVerification (`1725889000000-ServiceCatalogAndVerification.ts`)
-
-Migration này bổ sung 4 bảng thuộc phạm vi Member 1: Danh mục dịch vụ và Hồ sơ xác minh thợ.
-
-### 4.1 Bảng `service_categories`
-- `id`: UUID (PK, DEFAULT `uuid_generate_v4()`)
-- `name`: VARCHAR NOT NULL (Tên danh mục)
-- `code`: VARCHAR NOT NULL UNIQUE (Mã danh mục, Index)
-- `description`: TEXT NULLABLE (Mô tả)
-- `is_active`: BOOLEAN NOT NULL DEFAULT true (Index)
-- `created_at`, `updated_at`: TIMESTAMPTZ NOT NULL DEFAULT now()
-
-### 4.2 Bảng `services`
-- `id`: UUID (PK, DEFAULT `uuid_generate_v4()`)
-- `category_id`: UUID NOT NULL, FK `service_categories(id)` ON DELETE RESTRICT (Index)
-- `name`: VARCHAR NOT NULL (Tên dịch vụ)
-- `code`: VARCHAR NOT NULL UNIQUE (Mã dịch vụ, Index)
-- `description`: TEXT NULLABLE (Mô tả chi tiết)
-- `base_price`: NUMERIC(12,2) NULLABLE (Giá cơ bản chuẩn)
-- `min_price`: NUMERIC(12,2) NULLABLE (Giá sàn)
-- `max_price`: NUMERIC(12,2) NULLABLE (Giá trần)
-- `is_active`: BOOLEAN NOT NULL DEFAULT true (Index)
-- `created_at`, `updated_at`: TIMESTAMPTZ NOT NULL DEFAULT now()
-
-### 4.3 Bảng `technician_verifications`
-- `id`: UUID (PK, DEFAULT `uuid_generate_v4()`)
-- `technician_id`: UUID NOT NULL, FK `users(id)` ON DELETE CASCADE (Index)
-- `status`: ENUM (`pending`, `approved`, `rejected`), DEFAULT `pending` (Index)
-- `submitted_at`: TIMESTAMPTZ NOT NULL DEFAULT now()
-- `reviewed_at`: TIMESTAMPTZ NULLABLE
-- `reviewed_by`: UUID NULLABLE, FK `users(id)` ON DELETE SET NULL
-- `rejection_reason`: TEXT NULLABLE
-- `created_at`, `updated_at`: TIMESTAMPTZ NOT NULL DEFAULT now()
-
-### 4.4 Bảng `verification_documents`
-- `id`: UUID (PK, DEFAULT `uuid_generate_v4()`)
-- `verification_id`: UUID NOT NULL, FK `technician_verifications(id)` ON DELETE CASCADE (Index)
-- `document_type`: ENUM (`citizen_id_front`, `citizen_id_back`, `certificate`, `portfolio`, `other`)
-- `file_url`: VARCHAR NOT NULL (Đường dẫn tài liệu)
-- `file_name`: VARCHAR NOT NULL (Tên file gốc)
-- `file_size`: INT NOT NULL (Kích thước bytes)
-- `mime_type`: VARCHAR NOT NULL (Loại MIME)
-- `created_at`, `updated_at`: TIMESTAMPTZ NOT NULL DEFAULT now()
+# Revert migration gần nhất
+npm run migration:revert
+```

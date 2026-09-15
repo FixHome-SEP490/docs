@@ -4,625 +4,203 @@
 
 # FixHome — Project Documentation
 
-> **Single Source of Truth** for the FixHome Capstone Project.
-> Last updated: 2026-09-04 | Status: Polyrepo Setup Verified
+> **Single Source of Truth** for the FixHome Capstone Project.  
+> Last updated: 2026-09-16 | Status: **Master Project Specification v1.4 & Dev 1 Implementation Complete**
 
 ---
 
 ## 1. Project Overview
 
-**FixHome** is a Web + Mobile platform for booking home repair and maintenance services. It connects Customers with verified Technicians, assisted by AI-powered fault diagnosis. The system manages the full service lifecycle: Issue → Diagnosis → Booking → Technician Assignment → Service Order → Quotation → Repair → Completion → Review.
+**FixHome** là nền tảng Web + Mobile kết nối Khách hàng (Customer) với Kỹ thuật viên (Technician) đã qua xác minh chuyên môn cho nhu cầu sửa chữa và bảo trì thiết bị tại nhà. Hệ thống ứng dụng AI để chẩn đoán sơ bộ nguyên nhân sự cố và gợi ý chi phí (vai trò cố vấn - Advisory Only), đồng thời kiểm soát toàn diện vòng đời đơn dịch vụ:
+`Mô tả sự cố & AI Chẩn đoán → Đặt lịch (Booking) → Gợi ý & Phân công thợ (Matching & Invitation) → Đơn dịch vụ (Service Order) → Di chuyển & Check-in GPS → Bằng chứng ảnh & Báo giá → Sửa chữa → Nghiệm thu & Thanh toán tiền mặt 2 chiều → Đánh giá & Bảo hành`.
+
+---
 
 ## 2. Problem Statement
 
-Homeowners face difficulty finding reliable, verified repair technicians. Existing solutions lack transparency in pricing, scheduling, and service quality. FixHome addresses this by providing a structured booking platform with AI-assisted diagnosis, standardized workflows, and quality assurance through ratings.
+Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng tin cậy: giá cả không minh bạch, tình trạng chặt chém, phát sinh chi phí không rõ lý do, chất lượng linh kiện trôi nổi và không có cam kết bảo hành. FixHome giải quyết bài toán này bằng quy trình số hóa chuẩn mực, hợp đồng dịch vụ rõ ràng, bằng chứng trước/sau khi sửa, bảng giá minh bạch và đối soát công nợ chặt chẽ.
+
+---
 
 ## 3. Objectives
 
-- Enable Customers to easily book home repair services via Mobile/Web
-- Provide AI-assisted preliminary fault diagnosis from photos and descriptions
-- Manage the complete repair lifecycle with transparent status tracking
-- Facilitate fair technician assignment based on skills, location, and ratings
-- Ensure service quality through structured quotation and review workflows
+- Cung cấp giao diện đặt thợ sửa chữa dễ dàng trên cả Web và Mobile.
+- Hỗ trợ chẩn đoán sự cố sơ bộ qua ảnh và mô tả bằng mô hình AI.
+- Quản lý vòng đời đơn dịch vụ chặt chẽ qua **State Machine D-22** với các chốt chặn kiểm soát (Gating): Check-in GPS, bằng chứng ảnh (`BEFORE`/`AFTER`), duyệt báo giá, duyệt phát sinh.
+- Chuẩn hóa quy trình điều phối thợ theo thuật toán matching, phân công tuần tự với khóa hàng cơ sở dữ liệu (`pessimistic_write`).
+- Minh bạch tài chính: Bảo mật thanh toán, chuẩn hóa quy trình **Thanh toán tiền mặt kèm xác nhận 2 chiều (Cash Dual-Confirmation)** và đối soát Quản lý dịch vụ.
+- Đảm bảo chất lượng bằng chính sách bảo hành chính hãng (FixHome-provided Parts) và đánh giá sau dịch vụ (D-09).
 
-## 4. Actors
+---
 
-| Actor | Platform | Description |
-|-------|----------|-------------|
-| **Customer** | Mobile App, Web | End user who needs home repair/maintenance services |
-| **Technician** | Mobile App | Verified professional who performs repair work |
-| **Service Manager** | Web Admin Portal | Operations staff who manages bookings and dispatches technicians |
-| **Admin** | Web Admin Portal | System administrator managing users, services, and configuration |
+## 4. Actors & Platforms
 
-## 5. Actor Responsibility Matrix
+| Actor | Nền tảng | Trách nhiệm cốt lõi |
+| :--- | :--- | :--- |
+| **Customer** | Web & Mobile App | Đăng ký, đặt lịch sửa chữa 5 bước, chọn thợ từ danh sách gợi ý, đổi lịch hẹn, duyệt báo giá & phát sinh, nghiệm thu hoàn tất, xác nhận thanh toán tiền mặt, yêu cầu bảo hành, đánh giá thợ. |
+| **Technician** | Web & Mobile App | Quản lý hồ sơ & chứng chỉ KYC, cài đặt ca làm việc trong tuần, nhận lời mời việc, rút khỏi đơn khi có sự cố trước khi đến nơi, di chuyển, check-in GPS, tải ảnh trước/sau sửa, tạo báo giá, thu tiền mặt, quản lý công nợ FixHome. |
+| **Service Manager** | Web Admin Portal | Giám sát vận hành đơn hàng, điều phối thợ thủ công khi cần, can thiệp xử lý sự cố / tranh chấp, duyệt báo giá bất thường, đối soát thanh toán tiền mặt. |
+| **Admin** | Web Admin Portal | Quản trị tài khoản, phê duyệt KYC kỹ thuật viên, cấu hình danh mục dịch vụ & giá niêm yết, quản lý linh kiện chính hãng, cấu hình khu vực hoạt động, xem báo cáo doanh thu & dashboard. |
 
-### Customer
-- Register / Login
-- Manage personal profile
-- Browse service catalog
-- Submit issue photos and descriptions for AI Diagnosis
-- Create Bookings (select service, time, address)
-- Track Booking and Service Order status
-- View and approve/reject Quotations
-- Approve/reject additional costs when applicable
-- Receive notifications
-- View repair history
-- Rate and review Technicians after service completion
+---
 
-### Technician
-- Login
-- Manage technician profile
-- View assigned work
-- Accept tasks per business rules
-- Update Service Order status (ACCEPTED → EN_ROUTE → UNDER_REPAIR → COMPLETED)
-- Create/update Quotation when permitted
-- Submit repair evidence (photos)
-- Complete repair workflow
+## 5. Project Scope
 
-### Service Manager
-- Manage and review Bookings
-- Check technician availability
-- Assign / reassign Technicians (with AI recommendation support)
-- Handle operational exceptions
-- Monitor active Service Orders
-- Manage service operations per permission scope
+### 5.1 In Scope (Phạm vi hiện tại — Spec v1.4)
+- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC).
+- **Danh mục Dịch vụ & Linh kiện:** Phân cấp danh mục cha con, dịch vụ giá cố định (`FIXED_PRICE`) và khảo sát báo giá (`INSPECTION_REQUIRED`), danh mục linh kiện chính hãng FixHome (`is_fixhome_provided: true`) và linh kiện ngoài kèm bảo hành tùy chọn.
+- **Khu vực hoạt động:** Chuẩn hóa theo mã định danh hành chính quận/huyện tại Hà Nội và TP.HCM.
+- **AI Diagnosis Adapter:** REST API chẩn đoán sự cố sơ bộ với cơ chế fallback tự động, hoàn toàn không chặn luồng nghiệp vụ.
+- **Booking & Matching:** Đặt lịch 5 bước, khám phá ứng viên thợ, shortlist tối đa 5 thợ, gửi lời mời tuần tự (Sequential Invitation) với khóa dòng chống race condition.
+- **Đổi lịch hẹn (Customer Reschedule):** Khách hàng chủ động đổi ngày/khung giờ khi đơn chưa bắt đầu sửa chữa.
+- **Thợ rút khỏi đơn (Technician Withdraw):** Rút khỏi đơn kèm lý do minh bạch trước khi đến nơi, hệ thống tự động mời ứng viên tiếp theo.
+- **State Machine D-22:** `ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED`.
+- **Check-in GPS & Bằng chứng ảnh:** Geofencing xác minh thợ đã tới vị trí khách hàng; chốt chặn bắt buộc ảnh `BEFORE` trước khi sửa và ảnh `AFTER` trước khi hoàn tất.
+- **Báo giá & Phát sinh:** Báo giá khảo sát thực tế, khách duyệt/từ chối; chi phí phát sinh D-11 bất biến có liên kết phiên bản `supersedesId`.
+- **Bảo mật Thanh toán:** Chặn đứng lỗ hổng fake PAID từ client; chuẩn hóa **Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation)** và đối soát công nợ.
+- **Tiến trình đơn động (Real Timeline):** Đồng bộ trực tiếp từ `OrderStatusHistory`.
+- **Module Thông báo:** API và giao diện Thông báo, đếm số tin chưa đọc.
+- **Responsive Web:** Thanh điều hướng đáy (Bottom Navigation Bar) cho cả Customer và Technician trên thiết bị di động.
+- **Đánh giá & Bảo hành:** Đánh giá thợ D-09 (duy nhất 1 lần/đơn), tạo yêu cầu bảo hành và quản lý phiếu bảo hành.
 
-### Admin
-- Manage all user accounts
-- Manage Technician profiles and verification
-- Manage service catalog and categories
-- Manage service areas configuration
-- Administrative system configuration
-- View dashboard and reports
-- Review moderation (if within approved scope)
+### 5.2 Out of Scope (Ngoại phạm vi)
+- **Module Chat giữa Khách hàng và Thợ:** **HOÀN TOÀN KHÔNG THUỘC PHẠM VI DEV 1**. Các bảng dữ liệu chat đã được drop sạch sẽ qua migration `1725901000000-DropDev1ChatTables.ts` để bàn giao cho developer chuyên trách.
+- **Cổng thanh toán trực tuyến (VNPay / Online Payment):** Tạm thời chưa kích hoạt do chờ thông tin Merchant ID đối tác; hệ thống vận hành trơn tru qua Cash Dual-Confirmation.
+- **Live GPS Tracking liên tục theo thời gian thực:** Hiện tại sử dụng xác thực GPS Check-in tại điểm đến.
+- **Quản lý kho vận phức tạp (Warehouse / Inventory Management):** FixHome cung cấp danh mục định giá linh kiện mà không theo dõi tồn kho vật lý đa kho.
 
-## 6. Project Scope
+---
 
-### In Scope
-- User management and authentication (JWT + RBAC)
-- Service catalog and category management
-- AI-powered fault diagnosis (advisory only)
-- Booking management
-- Service Order lifecycle (State Machine)
-- Quotation creation and approval
-- Technician recommendation and assignment
-- Notifications (status changes, new assignments)
-- Ratings and reviews
-- Repair history (queried from completed Service Orders)
-- Dashboard and reporting
-- Service areas / maps
+## 6. Core Modules Status
 
-### Out of Scope
-- [NEED CONFIRMATION] Online payment / e-wallet integration
-- [NEED CONFIRMATION] Live GPS tracking (current scope uses status-based tracking + map)
-- IoT / smart home hardware integration
-- Multi-language support (beyond Vietnamese)
-- Third-party marketplace integration
+| # | Module | Backend | Web Frontend | Mobile App | Trạng thái |
+|---|--------|---------|--------------|------------|:---:|
+| 1 | Auth & JWT & RBAC | ✅ Dual-token, bcrypt, loose UUID | ✅ Pinia auth store, silent refresh | ✅ Zustand, SecureStore | **COMPLETED** |
+| 2 | User & Addresses | ✅ CRUD, default address, ownership | ✅ Customer Profile, tab Sổ địa chỉ | ✅ Profile screen | **COMPLETED** |
+| 3 | Technician Profile & KYC | ✅ Documents KYC, admin approval | ✅ Tech Profile, Verification upload | ✅ Profile screen | **COMPLETED** |
+| 4 | Technician Schedule | ✅ Ca làm việc trong tuần, slot check | ✅ Tech Schedule management | — | **COMPLETED** |
+| 5 | Service Catalog & Pricing | ✅ Fixed price & Inspection required | ✅ Service browsing, detail | — | **COMPLETED** |
+| 6 | Parts Catalog | ✅ FixHome vs Tech parts, warranty | ✅ Dynamic parts selection in quote | — | **COMPLETED** |
+| 7 | Service Areas | ✅ Chuẩn hóa mã tỉnh/huyện (HN, HCM) | ✅ Standardized district select UI | — | **COMPLETED** |
+| 8 | AI Diagnosis | ✅ Advisory stub, REST adapter | ✅ Diagnosis step in wizard | — | **COMPLETED** |
+| 9 | Booking & Reschedule | ✅ 5-step booking, reschedule endpoint | ✅ 5-step Wizard, Reschedule modal | — | **COMPLETED** |
+| 10 | Matching & Invitation | ✅ Sequential invite, row lock | ✅ Tech Invitations page (safe errors)| — | **COMPLETED** |
+| 11 | Service Order & State Machine | ✅ D-22 strict transitions, ownership | ✅ Real-time tracking, 0 mock data | — | **COMPLETED** |
+| 12 | GPS Geofence & Check-in | ✅ Lat/Long geofence verification | ✅ Tech Check-in GPS button | — | **COMPLETED** |
+| 13 | Evidence Gating | ✅ BEFORE & AFTER gating | ✅ Evidence upload & gallery | — | **COMPLETED** |
+| 14 | Technician Withdrawal | ✅ Withdraw endpoint & auto re-invite | ✅ Withdraw modal with reason | — | **COMPLETED** |
+| 15 | Quotation & Additional Costs| ✅ Labor/parts breakdown, D-11 link | ✅ Quote review & decision modal | — | **COMPLETED** |
+| 16 | Cash Dual-Confirmation | ✅ Cash pay API, block fake PAID | ✅ Cash payment confirmation | — | **COMPLETED** |
+| 17 | Platform Dues | ✅ Commission & parts settlement | ✅ "Công nợ FixHome" page | — | **COMPLETED** |
+| 18 | Real Order Timeline | ✅ OrderStatusHistory real data | ✅ Dynamic timeline (bỏ hardcode) | — | **COMPLETED** |
+| 19 | Notifications Module | ✅ In-app notifications API, unread | ✅ Notification bell badge & center | — | **COMPLETED** |
+| 20 | Reviews & Ratings | ✅ D-09 single review, average rating | ✅ Post-service review modal | — | **COMPLETED** |
+| 21 | Warranties & Claims | ✅ Warranty policy & claim flow | ✅ Customer Warranties page | — | **COMPLETED** |
+| 22 | Role Dashboards | ✅ 4 role-tailored dashboard metrics | ✅ Customer & Tech dashboards | — | **COMPLETED** |
 
-## 7. Core Modules
+---
 
-| # | Module | Status | Backend | Web | Mobile |
-|---|--------|--------|---------|-----|--------|
-| 1 | Authentication + JWT + RBAC | SCAFFOLDED | ✅ Guards, Strategy, Decorators | ✅ Auth store, guard | ✅ Auth store, SecureStore |
-| 2 | User Management | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 3 | Technician Management | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 4 | Technician Verification | PLANNED | — | — | — |
-| 5 | Service Catalog | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 6 | Categories | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 7 | AI Diagnosis | SCAFFOLDED | ✅ Controller, Service, DTOs | — | — |
-| 8 | Booking | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 9 | Service Order | SCAFFOLDED | Module exists, State Machine ✅ | — | — |
-| 10 | Service Order State Machine | IMPLEMENTED + TESTED | ✅ 15 tests passing | — | — |
-| 11 | Quotation | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 12 | Additional Cost Approval | PLANNED | — | — | — |
-| 13 | Technician Recommendation | PLANNED | — | — | — |
-| 14 | Technician Assignment | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 15 | Notifications | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 16 | Ratings & Reviews | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 17 | Repair History | PLANNED | Query from completed Service Orders | — | — |
-| 18 | Media / Repair Evidence | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 19 | Dashboard | SCAFFOLDED | Module exists, no endpoints | ✅ Page shell | — |
-| 20 | Maps / Service Areas | SCAFFOLDED | Module exists, no endpoints | — | — |
-| 21 | Health Check | IMPLEMENTED | ✅ DB + AI health | — | — |
-
-> **Important**: "SCAFFOLDED" means the NestJS module, controller, and service files exist but contain **no business logic** — only placeholder TODO comments.
-
-## 8. System Architecture
+## 7. System Architecture
 
 ```text
-Web (Vue.js) ──────┐
-                    │
-Mobile (Expo) ─────┼──► NestJS Backend API ──► PostgreSQL
-                    │
-                    └──► FastAPI AI Service ──► Gemini / OpenAI
++------------------------------------+         +--------------------------------------+
+|          Vue.js 3 Web Client       |         |          React Native Mobile         |
+|  (Customer, Tech, Manager, Admin)  |         |      (Customer & Technician App)     |
+|   32+ pages, Warm Orange System    |         |        Expo SDK 57, Zustand          |
++------------------+-----------------+         +-------------------+------------------+
+                   |                                               |
+                   +-----------------------+-----------------------+
+                                           | REST API (JWT Dual-Token + RBAC)
+                                           v
+                   +-----------------------------------------------+
+                   |              NestJS Backend API               |
+                   |       (16 Modules, TypeORM, Vitest)           |
+                   +-----------+-----------------------+-----------+
+                               |                       |
+                  TypeORM / SQL|                       | HTTP Client (Axios)
+                               v                       v
+                   +-----------+----------+  +---------+-----------+
+                   | PostgreSQL Database  |  |  FastAPI AI Service |
+                   |  (PostgreSQL 16,     |  +---------+-----------+
+                   |   14 Migrations)     |            |
+                   +----------------------+            | Provider Abstraction
+                                                       v
+                                             +---------+-----------+
+                                             | Gemini / OpenAI API |
+                                             +---------------------+
 ```
 
-### Architecture Principles
-- Web and Mobile are **UI clients only** — they call the Backend API
-- NestJS Backend is the **authoritative business layer** for all logic, validation, RBAC, and state management
-- AI Service is **advisory only** — it provides diagnosis suggestions but does not control business transactions
-- Web and Mobile **never call Gemini/OpenAI directly**
+---
 
-### Repository Boundaries
-
-| Repository | Responsibility |
-|------------|----------------|
-| `Backend-FixHome` | NestJS API, TypeORM entities/migrations, PostgreSQL development setup |
-| `Frontend-FixHome` | Vue web client |
-| `Mobi-FixHome` | Expo mobile client |
-| `AI-FixHome` | FastAPI AI diagnosis service |
-| `Docs-FixHome` | Cross-system requirements, architecture, contracts, testing and governance |
-
-See [REPOSITORY_GUIDE.md](REPOSITORY_GUIDE.md) for clone layout, runtime versions, startup order,
-and cross-repository change coordination.
-
-### Actor Platform Mapping
-| Actor | Primary Platform |
-|-------|-----------------|
-| Customer | Mobile App (also Web) |
-| Technician | Mobile App |
-| Service Manager | Web Admin Portal |
-| Admin | Web Admin Portal |
-
-## 9. Backend Architecture
-
-- **Framework**: NestJS 10 with TypeScript
-- **ORM**: TypeORM with PostgreSQL
-- **Testing**: Vitest
-- **Linting**: OxLint
-- **API Docs**: Swagger (OpenAPI) at `/api/docs`
-- **Global Prefix**: `/api/v1`
-- **Security**: Helmet, CORS, ValidationPipe (whitelist + transform + forbidNonWhitelisted)
-- **Response Format**: Standardized via `TransformInterceptor` wrapping all responses in `{ statusCode, message, data }`
-- **Error Format**: Standardized via `HttpExceptionFilter` producing `{ statusCode, message, errors?, timestamp, path }`
-- **Modules**: 16 feature modules organized under `src/modules/`
-
-## 10. Web Architecture
-
-- **Framework**: Vue.js 3 with Composition API (`<script setup>`)
-- **Build Tool**: Vite 8
-- **Styling**: TailwindCSS 4
-- **State Management**: Pinia
-- **Routing**: Vue Router with auth guards
-- **API Client**: Axios with JWT interceptor
-- **TypeScript**: Strict mode via vue-tsc
-- **Current Pages**: Login, Dashboard (shell), 404
-
-## 11. Mobile Architecture
-
-- **Framework**: React Native with Expo SDK 57
-- **Navigation**: React Navigation (native-stack + bottom-tabs)
-- **State Management**: Zustand
-- **API Client**: Axios with JWT interceptor
-- **Secure Storage**: expo-secure-store (not localStorage)
-- **Current Screens**: Login, Customer Home, Technician Home
-- **Role-based Navigation**: Separate navigators for Customer and Technician flows
-
-## 12. AI Architecture
-
-- **Framework**: FastAPI (Python)
-- **Provider Abstraction**: Abstract `AIProvider` base class with `GeminiProvider`, `OpenAIProvider`, and `MockAIProvider`
-- **Configurable**: `AI_PROVIDER` env var selects provider (`gemini`, `openai`, `mock`)
-- **Schemas**: Pydantic models with camelCase aliases for JSON API compatibility
-- **Error Handling**: Custom `AIServiceException` hierarchy with structured error responses
-- **Confidence Threshold**: Configurable via `AI_CONFIDENCE_THRESHOLD` (default 0.6)
-- **Disclaimer**: All responses include advisory disclaimer
-- **Tests**: Health check test + provider abstraction contract test
-
-## 13. Database Architecture
-
-- **DBMS**: PostgreSQL 16 (Docker container)
-- **ORM**: TypeORM
-- **UUID Extension**: Enabled via `docker/postgres/init.sql`
-- **Base Entity**: All entities extend `BaseEntity` (UUID `id`, `created_at`, `updated_at`)
-- **Naming**: snake_case tables (plural), snake_case columns, `<entity>_id` foreign keys
-- **Migrations**: TypeORM migration system; `data-source.ts` for CLI commands
-- **Synchronize**: Enabled only in `development` environment; **never in production**
-
-### Current Entities
-| Entity | Table | Status |
-|--------|-------|--------|
-| User | `users` | SCAFFOLDED (basic fields: email, password_hash, full_name, phone_number, role, is_active) |
-
-> Most modules have `.gitkeep` placeholder in their `entities/` directory. Entity definitions are needed before business logic implementation.
-
-## 14. Authentication
-
-- **Strategy**: JWT (Bearer token via Authorization header)
-- **Implementation**: Passport.js + `@nestjs/jwt` + `@nestjs/passport`
-- **JWT Payload**: `{ sub: userId, email, role }`
-- **Guards**: `JwtAuthGuard` (authentication), `RolesGuard` (authorization)
-- **Decorators**: `@Roles(Role.CUSTOMER, ...)` and `@CurrentUser()`
-- **Token Storage**:
-  - Web: `localStorage` (access_token key)
-  - Mobile: `expo-secure-store` (encrypted native storage)
-- **Status**: SCAFFOLDED — Guard infrastructure exists, login/register endpoints not yet implemented
-
-## 15. Authorization / RBAC
-
-| Role | Value | Description |
-|------|-------|-------------|
-| Customer | `customer` | End user booking services |
-| Technician | `technician` | Repair professional |
-| Service Manager | `service_manager` | Operations coordinator |
-| Admin | `admin` | System administrator |
-
-- Roles are defined in `src/shared/enums/role.enum.ts`
-- `RolesGuard` reads `@Roles()` decorator metadata
-- Role values are consistent across Backend enum, Web `UserRole` enum, and Mobile `UserRole` enum
-
-## 16. Service Catalog
-
-- **Status**: SCAFFOLDED
-- Categories and Services modules exist but have no entities or endpoints
-- Expected to support hierarchical categories (e.g., Electrical → Wiring, Lighting)
-
-## 17. AI Diagnosis Flow
+## 8. Service Order State Machine D-22
 
 ```text
-Customer (Mobile/Web)
-    │
-    ├── description (text)
-    ├── imageUrl (optional)
-    └── categoryHint (optional)
-    │
-    ▼
-NestJS Backend ── POST /api/v1/ai-diagnosis/analyze
-    │
-    ▼
-FastAPI AI Service ── POST /api/v1/diagnosis/analyze
-    │
-    ├── AI Provider (Gemini/OpenAI/Mock)
-    │
-    ▼
-DiagnosisResponse {
-    possibleIssues: string[]
-    possibleCauses: string[]
-    urgency: LOW | MEDIUM | HIGH
-    estimatedCost: { min, max, currency }
-    suggestedActions: string[]
-    recommendedServiceId: string | null
-    confidence: 0.0 - 1.0
-    isLowConfidence: boolean
-    disclaimer: string
-}
+         [ Customer Booking: REQUESTED ]
+                        │
+             (Sequential Invitation)
+                        ↓
+            [ Technician ACCEPT ] ──(Withdraw before arrival)──> [ RE-DISPATCHING ]
+                        │
+          (Atomic Creation: ACCEPTED)
+                        │
+               (Technician Starts)
+                        ↓
+                  [ EN_ROUTE ] ────(Withdraw before arrival)──> [ RE-DISPATCHING ]
+                        │
+            (GPS Check-in + BEFORE Photo)
+                        ↓
+                [ UNDER_REPAIR ] ──(Hủy tùy tiện: BỊ CHẶN, chuyển sang Yêu cầu hỗ trợ)
+                        │
+          (Thợ sửa xong + Báo giá duyệt)
+          (AFTER Photo + Thợ báo xong)
+          (Khách nghiệm thu + Trả tiền mặt)
+                        ↓
+                  [ COMPLETED ] (Terminal)
 ```
 
-### AI Safety Rules
-- AI is **advisory only** — results are suggestions, not definitive conclusions
-- **Low confidence** (< threshold): `isLowConfidence: true` flag is set
-- **AI failure**: Graceful fallback allowing customer to continue booking manually
-- AI failure must **never block** the core booking workflow
-- AI output is **untrusted data** — must not be used to directly approve business transactions
-
-### AI Error Codes
-`AI_PROVIDER_UNAVAILABLE`, `AI_TIMEOUT`, `AI_RATE_LIMIT`, `INVALID_IMAGE`, `UNSUPPORTED_IMAGE`, `INSUFFICIENT_INFORMATION`, `LOW_CONFIDENCE`, `AI_PROVIDER_ERROR`
-
-## 18. Booking Flow
-
-- **Status**: SCAFFOLDED (module exists, no implementation)
-- **Expected Flow**:
-  1. Customer selects service, time, and address
-  2. Customer optionally attaches AI diagnosis result
-  3. Booking is created with `PENDING` status
-  4. Service Manager reviews and confirms
-  5. Booking is confirmed → triggers Technician Assignment → Service Order creation
-
-### Booking Status (Expected)
-`PENDING` → `CONFIRMED` → `CANCELLED`
-
-> **Note**: Booking status and Service Order status are separate lifecycles. They must not be mixed.
-
-## 19. Booking vs Service Order
-
-| Aspect | Booking | Service Order |
-|--------|---------|---------------|
-| **Purpose** | Customer request + scheduling | Repair execution lifecycle |
-| **Creator** | Customer | System / Service Manager |
-| **Key Data** | Service, time, address, description, AI result | Technician, status, quotation, evidence, timestamps |
-| **Status** | PENDING, CONFIRMED, CANCELLED | PENDING_CONFIRMATION, ACCEPTED, EN_ROUTE, UNDER_REPAIR, COMPLETED, CANCELLED |
-
-```text
-Customer creates Booking
-        ↓
-Booking validated / confirmed
-        ↓
-Technician assigned
-        ↓
-Service Order created
-        ↓
-Repair execution (State Machine)
-        ↓
-Completion + Review
-```
-
-## 20. Service Order State Machine
-
-### Status Values
-| Status | Description |
-|--------|-------------|
-| `PENDING_CONFIRMATION` | Order created, waiting for confirmation/acceptance |
-| `ACCEPTED` | Confirmed and assigned, technician ready |
-| `EN_ROUTE` | Technician traveling to location |
-| `UNDER_REPAIR` | Repair work in progress |
-| `COMPLETED` | Repair finished (terminal) |
-| `CANCELLED` | Order cancelled (terminal) |
-
-### Valid Transitions
-```text
-PENDING_CONFIRMATION → ACCEPTED | CANCELLED
-ACCEPTED → EN_ROUTE | CANCELLED
-EN_ROUTE → UNDER_REPAIR
-UNDER_REPAIR → COMPLETED
-COMPLETED → (terminal)
-CANCELLED → (terminal)
-```
-
-### Role-based Transition Permissions
-| Current Status | Customer Can | Technician Can | Service Manager Can | Admin Can |
-|---------------|-------------|----------------|--------------------|----|
-| PENDING_CONFIRMATION | Cancel | — | Accept, Cancel | Accept, Cancel |
-| ACCEPTED | Cancel | → EN_ROUTE | → EN_ROUTE, Cancel | → EN_ROUTE, Cancel |
-| EN_ROUTE | — | → UNDER_REPAIR | → UNDER_REPAIR | → UNDER_REPAIR |
-| UNDER_REPAIR | — | → COMPLETED | → COMPLETED | → COMPLETED |
-
-### Implementation Status
-- **State Machine class**: ✅ IMPLEMENTED + TESTED (15 tests, all passing)
-- **Integration with Service Orders service**: ❌ NOT YET (service is placeholder)
-
-## 21. Technician Recommendation
-
-- **Status**: PLANNED
-- AI may suggest technicians based on: specialization, rating, proximity, availability
-- AI recommendation is **advisory** — assignment must be a business action through Backend
-
-## 22. Technician Assignment
-
-- **Status**: SCAFFOLDED (module exists, no implementation)
-- Service Manager assigns technician to Service Order
-- Must distinguish: AI **recommends** vs. system **assigns**
-- Assignment module has planned endpoints: assign, reassign, suggestions
-
-## 23. Quotation Flow
-
-- **Status**: SCAFFOLDED (module exists, no implementation)
-- **Expected Flow**:
-  1. Technician creates quotation after on-site inspection
-  2. Quotation details: labor cost, parts, total
-  3. Customer reviews and approves/rejects
-  4. Approved quotation may become immutable
-- **OPEN BUSINESS DECISION**: When can technician update quotation? Does approved quotation become immutable?
-
-## 24. Additional Cost Approval
-
-- **Status**: PLANNED
-- If additional costs are discovered during repair, explicit Customer approval is required
-- Technician cannot unilaterally add costs
-- **OPEN BUSINESS DECISION**: Exact approval flow, status tracking, relationship with order state
-
-## 25. Repair Evidence
-
-- **Status**: SCAFFOLDED (Media module exists, no implementation)
-- Technicians submit photos as proof of completed work
-- Storage: Cloudinary or Firebase Storage (configured via environment)
-- Upload validation required: MIME type, file size, supported formats
-
-## 26. Notifications
-
-- **Status**: SCAFFOLDED (module exists, no implementation)
-- Expected triggers: status changes, new assignments, quotation updates, booking confirmations
-- **OPEN BUSINESS DECISION**: Push notifications (mobile), in-app, email, or combination
-
-## 27. Ratings & Reviews
-
-- **Status**: SCAFFOLDED (module exists, no implementation)
-- Customer rates Technician/service after order COMPLETED
-- Rating: 1-5 stars + text comment
-- Average rating calculated for Technician profile
-
-## 28. Repair History
-
-- **Status**: PLANNED
-- No separate table — query `service_orders` WHERE `status = 'completed'` for the customer
-- Provides historical view of past repairs
-
-## 29. Service Areas / Maps
-
-- **Status**: SCAFFOLDED (module exists, no implementation)
-- Google Maps API integration for location services
-- Define serviceable geographic areas
-- **OPEN BUSINESS DECISION**: Exact scope of map functionality
-
-## 30. Dashboard
-
-- **Status**: SCAFFOLDED
-- Backend module exists, Web page shell exists
-- Expected views: Admin stats, Manager stats, Technician stats
-
-## 31. API Principles
-
-- **Base URL**: `/api/v1`
-- **Style**: RESTful with plural resource names
-- **Methods**: GET (list/detail), POST (create), PATCH (partial update), DELETE
-- **Authentication**: Bearer JWT token in Authorization header
-- **Response Envelope**: `{ statusCode, message, data, meta? }`
-- **Pagination**: `{ page, limit, total, totalPages }` in `meta`
-- **Swagger**: Auto-generated at `/api/docs`
-
-## 32. Error Handling
-
-### Standard Error Response
-```json
-{
-  "statusCode": 400,
-  "message": "Validation failed",
-  "errors": [{ "field": "email", "message": "email must be a valid email" }],
-  "timestamp": "2026-09-02T10:00:00.000Z",
-  "path": "/api/v1/users"
-}
-```
-
-### HTTP Status Codes
-| Code | Usage |
-|------|-------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Validation error |
-| 401 | Unauthenticated |
-| 403 | Forbidden (wrong role) |
-| 404 | Not found |
-| 409 | Conflict (duplicate, invalid state transition) |
-| 500 | Internal server error |
-
-### Rules
-- Never expose database errors or stack traces to clients
-- Never leak internal secrets in error responses
-- Use 409 for business/state conflicts (e.g., invalid state transition)
-
-## 33. Security Baseline
-
-### Authentication
-- JWT required for all endpoints except: health check, auth (login/register), public service catalog
-- Token validation via Passport JWT Strategy
-
-### Authorization
-- RBAC via `@Roles()` decorator + `RolesGuard`
-- Resource ownership validation required (e.g., Customer A cannot view Customer B's booking)
-- IDOR prevention: validate requesting user owns the resource
-
-### Input Validation
-- Global `ValidationPipe` with whitelist + forbidNonWhitelisted
-- All DTOs use `class-validator` decorators
-
-### Secret Management
-- `.env` files excluded from git via `.gitignore`
-- `.env` files not tracked by git (verified)
-- JWT_SECRET must be changed for production
-
-### Upload Security (When Implemented)
-- Validate MIME type, file extension, maximum size
-- Restrict to supported image types
-
-### AI Security
-- User text/images are **untrusted input** to AI
-- AI output is **untrusted data** — never use directly for business decisions
-- AI failure must not expose internal errors
-
-## 34. AI Safety / Fallback
-
-- **Confidence below threshold**: Flag `isLowConfidence: true`, UI should show advisory notice
-- **Provider unavailable**: Return fallback response allowing manual service selection
-- **Timeout**: 15s timeout on Backend → AI Service call, 5s for health check
-- **Rate limiting**: Handle via `AI_RATE_LIMIT` error code
-- **Invalid input**: Return structured error with `fallback_allowed: true`
-- AI must **never hallucinate certainty** when confidence is low
-
-## 35. Testing Strategy
-
-### Backend
-- **Framework**: Vitest
-- **Current Tests**: 15 State Machine unit tests + 2 health E2E tests — all passing
-- **Lint**: OxLint — 0 warnings, 0 errors
-- **Build**: NestJS build — passing with deterministic output (incremental cache disabled for build)
-- **Target**: Unit tests for services, controllers, guards; integration tests for API; e2e tests
-
-### Web
-- **TypeCheck**: vue-tsc — passing
-- **Build**: Vite production build — passing
-- **Lint**: Not yet configured (TODO)
-- **Testing Framework**: Not yet configured (TODO)
-
-### Mobile
-- **TypeCheck**: tsc --noEmit — passing
-- **Lint**: Not yet configured (TODO)
-- **Testing Framework**: Not yet configured (TODO)
-
-### AI Service
-- **Framework**: pytest + pytest-asyncio
-- **Current Tests**: 2 tests (health check + provider contract) — all passing
-- **Compile Check**: python -m compileall — passing
-
-### Test Status Labels
-| Label | Meaning |
-|-------|---------|
-| `PASS` | Test was executed and succeeded |
-| `FAIL` | Test was executed and failed |
-| `NOT VERIFIED` | Test was not executed — provide reason |
-
-> **Never claim PASS without actually running the test.**
-
-## 36. Deployment Overview
-
-- **Database**: PostgreSQL 16 via Docker Compose
-- **Backend**: Node.js process (`npm run start:prod`)
-- **Web**: Static files from Vite build
-- **Mobile**: Expo build (EAS or Expo Go for development)
-- **AI Service**: Uvicorn ASGI server
-- **CI**: Independent GitHub Actions workflow in each executable repository
-
-## 37. Architecture Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| Five independent repositories | Clear ownership and independent CI; cross-system contracts remain centralized in Docs-FixHome |
-| NestJS modular architecture | One module per feature, clear separation |
-| TypeORM over Prisma | Team familiarity, NestJS native integration |
-| Vitest over Jest | Faster, modern, Vite-native |
-| OxLint over ESLint | Faster for large codebases |
-| Zustand over Redux | Simpler API for React Native, less boilerplate |
-| AI provider abstraction | Easy swap between Gemini/OpenAI/Mock without code changes |
-| Separate AI Service (FastAPI) | Python ecosystem for AI/ML, independent scaling |
-| Booking ≠ Service Order | Clear lifecycle separation per domain design |
-| Repair History from Service Orders | No separate table — query completed orders |
-
-## 38. Current Limitations
-
-- Authentication endpoints not yet implemented (scaffolded only)
-- Only 1 entity defined (User) — other entities need creation
-- Most backend modules are placeholders with no business logic
-- No database migrations exist yet
-- Web has only Login + Dashboard shell pages
-- Mobile has only Login + Home screens per role
-- AI providers return hardcoded skeleton responses
-- No testing frameworks configured for Web or Mobile
-- No lint configured for Web or Mobile
-
-## 39. Feature Traceability Matrix
-
-| Requirement | ID | Actor | Backend | Database | Web | Mobile | AI | Test | Status |
-|------------|-----|-------|---------|----------|-----|--------|----|------|--------|
-| Auth & RBAC | FR-AUTH-001 | All | Guards, Strategy | users | Auth store | Auth store | — | — | SCAFFOLDED |
-| User Management | FR-USER-001 | Admin | Module | users | — | — | — | — | SCAFFOLDED |
-| Technician Management | FR-TECH-001 | Admin, Tech | Module | — | — | — | — | — | SCAFFOLDED |
-| Technician Verification | FR-TECH-002 | Admin | — | — | — | — | — | — | PLANNED |
-| Service Catalog | FR-SERVICE-001 | All | Module | — | — | — | — | — | SCAFFOLDED |
-| Categories | FR-SERVICE-002 | Admin | Module | — | — | — | — | — | SCAFFOLDED |
-| AI Diagnosis | FR-AI-001 | Customer | Controller+Service | — | — | — | ✅ Endpoint | ✅ 2 tests | SCAFFOLDED |
-| Booking | FR-BOOK-001 | Customer, SM | Module | — | — | — | — | — | SCAFFOLDED |
-| Service Order | FR-ORDER-001 | All | Module + StateMachine | — | — | — | — | ✅ 15 tests | SCAFFOLDED |
-| Quotation | FR-QUOTE-001 | Tech, Customer | Module | — | — | — | — | — | SCAFFOLDED |
-| Additional Cost | FR-QUOTE-002 | Tech, Customer | — | — | — | — | — | — | PLANNED |
-| Tech Recommendation | FR-ASSIGN-001 | SM | — | — | — | — | — | — | PLANNED |
-| Tech Assignment | FR-ASSIGN-002 | SM | Module | — | — | — | — | — | SCAFFOLDED |
-| Notifications | FR-NOTIFY-001 | All | Module | — | — | — | — | — | SCAFFOLDED |
-| Reviews & Ratings | FR-REVIEW-001 | Customer | Module | — | — | — | — | — | SCAFFOLDED |
-| Repair History | FR-HISTORY-001 | Customer | — | — | — | — | — | — | PLANNED |
-| Media / Evidence | FR-MEDIA-001 | Tech | Module | — | — | — | — | — | SCAFFOLDED |
-| Dashboard | FR-DASH-001 | Admin, SM | Module | — | ✅ Page shell | — | — | — | SCAFFOLDED |
-| Service Areas | FR-MAP-001 | Admin | Module | — | — | — | — | — | SCAFFOLDED |
-| Health Check | FR-SYS-001 | System | ✅ Controller | — | — | — | ✅ AI health | ✅ | IMPLEMENTED |
-
-## 40. Glossary
-
-| Term | Definition |
-|------|-----------|
-| **Booking** | A customer's request to schedule a repair service |
-| **Service Order** | The execution record of a repair job, managed by State Machine |
-| **Quotation** | Detailed cost breakdown created by Technician after inspection |
-| **AI Diagnosis** | AI-powered preliminary assessment of a reported issue (advisory only) |
-| **State Machine** | Enforced set of valid status transitions for Service Orders |
-| **RBAC** | Role-Based Access Control — permissions based on user role |
-| **Fallback** | Graceful degradation when AI service is unavailable |
-| **Confidence** | AI's self-assessed certainty score (0.0 to 1.0) |
-| **Advisory Only** | AI results are suggestions, not authoritative decisions |
-| **IDOR** | Insecure Direct Object Reference — accessing others' resources by changing IDs |
+### Các chốt chặn kiểm soát (Quality & Security Gates):
+1. **Atomic Creation:** `ServiceOrder` và `TechnicianAssignment` chỉ được tạo khi KTV xác nhận `ACCEPT`, tuyệt đối không tạo đơn mồ côi.
+2. **GPS Geofencing:** Bắt buộc KTV gửi tọa độ hợp lệ tại nhà khách hàng khi thực hiện `check-in`.
+3. **Evidence Gating:**
+   - Để vào `UNDER_REPAIR`: Phải có ít nhất 1 ảnh `BEFORE`.
+   - Để vào `COMPLETED`: Phải có ít nhất 1 ảnh `AFTER` và 0 chi phí phát sinh nào đang chờ duyệt.
+4. **Không tự set PAID:** Nghiêm cấm client tự ý set đơn hàng thành `PAID`. Quy trình thanh toán tiền mặt yêu cầu xác nhận 2 chiều giữa Khách hàng và Thợ.
+
+---
+
+## 9. Database Migrations History
+
+Toàn bộ 14 migrations đã được thực thi và kiểm thử tính toàn vẹn trên PostgreSQL:
+
+1. `1725888000000-InitialBaseline.ts` (Users, Roles, RefreshTokens)
+2. `1725889000000-ServiceCatalogAndVerification.ts` (Categories, Services, KYC)
+3. `1725890000000-CoreIntegrity.ts` (Foreign keys & indexes)
+4. `1725891000000-Phase0Bootstrap.ts` (System configs & default seed)
+5. `1725892000000-Phase1AuthUsers.ts` (Customer addresses)
+6. `1725893000000-Phase2ServiceCatalogAndAreas.ts` (Service areas)
+7. `1725894000000-Phase3to8BusinessLogic.ts` (Bookings, Orders, Quotes, Reviews)
+8. `1725895000000-SpecV12PricingAndSettlement.ts` (Pricing modes, Settlements, Dues)
+9. `1725896000000-SpecV14GapFixes.ts` (FixHome Parts, Part warranty options)
+10. `1725897000000-Dev1Integrity.ts` (State machine constraints)
+11. `1725898000000-Dev1EvidenceAndDueMetadata.ts` (Order evidences, Platform dues)
+12. `1725899000000-CustomerServiceAreaAndCodes.ts` (Administrative district codes)
+13. `1725900000000-TechnicianRoleEnhancements.ts` (Schedules, Withdrawals, OrderStatusHistory)
+14. `1725901000000-DropDev1ChatTables.ts` (An toàn loại bỏ Chat khỏi scope Dev 1)
+
+---
+
+## 10. Quality Gates & Test Metrics
+
+- **Backend (NestJS):**
+  - Typecheck: `tsc --noEmit` -> **0 errors**
+  - Lint: `oxlint` -> **0 warnings, 0 errors** (265 files)
+  - Unit Tests: `vitest run` -> **20/20 test suites passed, 129/129 tests passed**
+  - Build: `nest build` -> **PASS**
+- **Web Frontend (Vue 3):**
+  - Typecheck: `vue-tsc -b` -> **0 errors**
+  - Lint: `eslint .` -> **0 warnings, 0 errors**
+  - Unit Tests: `vitest run` -> **3/3 test suites passed, 14/14 tests passed**
+  - Build: `vite build` -> **PASS** (~4.5s)
+- **Data Integrity:**
+  - **Zero Mock Data:** Tất cả dữ liệu Khách hàng và Thợ hiển thị trên Web đều gọi API thực từ Backend.
+  - **Zero Broken Routes:** Đã kiểm tra toàn diện, chuyển hướng chính xác các đường dẫn.
