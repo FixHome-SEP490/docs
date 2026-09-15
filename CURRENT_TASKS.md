@@ -67,6 +67,29 @@ All 24 audit tasks have been successfully implemented and tested:
 
 ---
 
+## Dev 2 Admin, Service Manager & Shared Foundation Tasks (Completed 2026-09-16)
+
+| Task ID | Task Title | Status | Components Modified / Created | Verification |
+| :--- | :--- | :---: | :--- | :---: |
+| **D2-00** | **Foundation Review & Audit** | **COMPLETED** | Baseline Spec v1.4 & Code Gap Audit | **PASS** |
+| **D2-01** | **Authentication & Seed Repair** | **COMPLETED** | `Backend: JwtStrategy, seed-users.ts`<br>`Frontend: auth.store.ts, client.ts` | **PASS** (Valid UUID v4 demo accounts, decoupled session invalidation) |
+| **D2-02** | **JWT / RBAC Enforcement** | **COMPLETED** | `Backend: RolesGuard, PermissionsGuard`<br>`Frontend: router/guards.ts` | **PASS** (Strict 4-role separation, Admin vs Manager boundaries) |
+| **D2-03** | **User Management (Admin)** | **COMPLETED** | `Backend: users.controller.ts, users.service.ts`<br>`Frontend: AdminUsersPage.vue, admin-users.api.ts` | **PASS** (User status governance, pagination, audit trail) |
+| **D2-04** | **Technician KYC Hardening** | **COMPLETED** | `Backend: technician-verifications, kyc-storage.service.ts`<br>`Frontend: AdminVerifications, FhStatusPill` | **PASS** (Private Supabase Storage, signed access, canonical VERIFIED status) |
+| **D2-05** | **Service Category & Catalog** | **COMPLETED** | `Backend: categories, services controllers/services`<br>`Frontend: CatalogManagementPage.vue, catalog.api.ts` | **PASS** (FIXED_PRICE vs INSPECTION_REQUIRED governance) |
+| **D2-06** | **Technician Service Pricing** | **COMPLETED** | `Backend: technicians.service.ts (setSkillPricing)`<br>`Frontend: TechnicianProfilePage.vue` | **PASS** (Base price override prevention for FIXED_PRICE) |
+| **D2-07** | **FixHome Part Catalog** | **COMPLETED** | `Backend: parts-catalog.module.ts, entities, controllers`<br>`Frontend: AdminPartsPage.vue, admin-parts.api.ts` | **PASS** (Lightweight catalog, pricing & warranty metadata, zero WMS) |
+| **D2-08** | **System Business Config** | **COMPLETED** | `Backend: system-config.module.ts, admin-config.controller.ts`<br>`Frontend: AdminConfigPage.vue, admin-config.api.ts` | **PASS** (Config registry with effectivity status classification) |
+| **D2-09** | **Operational Audit Log** | **COMPLETED** | `Backend: audit-log.module.ts, admin-audit-log.controller.ts`<br>`Frontend: AdminAuditLogsPage.vue, admin-audit-logs.api.ts` | **PASS** (Append-only audit trail for sensitive Admin/SM actions) |
+| **D2-10** | **Server-Authoritative Payment** | **COMPLETED** | `Backend: finance.module.ts, finance.service.ts` | **PASS** (`isOrderPaymentSatisfied` server check, client fake blocked) |
+| **D2-11** | **Cash Settlement & Disputes** | **COMPLETED** | `Backend: finance.service.ts (cash-settlement)`<br>`Frontend: SupportCashDetailPage.vue` | **PASS** (Handshake dual-confirmation, mismatch routed to support) |
+| **D2-12** | **Platform Due Enforcement** | **COMPLETED** | `Backend: platform-due.entity.ts, technicianEligibility.ts`<br>`Frontend: AdminPlatformDuesPage.vue, TechnicianPlatformDuesPage.vue` | **PASS** (Unpaid dues block technician dispatch eligibility) |
+| **D2-13** | **Support Cases (SM Operations)** | **COMPLETED** | `Backend: support-cases.module.ts, controller, service`<br>`Frontend: SupportQueuePage.vue, SupportDetailPage.vue` | **PASS** (Manager dispute resolution queue, escalation, audit logging) |
+| **D2-14** | **Admin/Manager Web Real API** | **COMPLETED** | `Frontend: Console Layout, Admin pages, Support pages` | **PASS** (Eliminated mock data, fail-closed operational dashboards) |
+| **D2-15** | **Integration & Hardening** | **COMPLETED** | `Backend & Frontend: TypeCheck, vitest (331 backend / 104 frontend tests)` | **PASS** (Complete branch merge into `Truonghoang` with 100% green tests) |
+
+---
+
 ## Core Historical Tasks
 
 ### TASK-001 through TASK-006: Member 1 Core Platform & Identity
