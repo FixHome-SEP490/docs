@@ -39,16 +39,20 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 | :--- | :--- | :--- |
 | **Customer** | Web & Mobile App | Đăng ký, đặt lịch sửa chữa 5 bước, chọn thợ từ danh sách gợi ý, đổi lịch hẹn, duyệt báo giá & phát sinh, nghiệm thu hoàn tất, xác nhận thanh toán tiền mặt, yêu cầu bảo hành, đánh giá thợ. |
 | **Technician** | Web & Mobile App | Quản lý hồ sơ & chứng chỉ KYC, cài đặt ca làm việc trong tuần, nhận lời mời việc, rút khỏi đơn khi có sự cố trước khi đến nơi, di chuyển, check-in GPS, tải ảnh trước/sau sửa, tạo báo giá, thu tiền mặt, quản lý công nợ FixHome. |
-| **Service Manager** | Web Admin Portal | Giám sát vận hành đơn hàng, điều phối thợ thủ công khi cần, can thiệp xử lý sự cố / tranh chấp, duyệt báo giá bất thường, đối soát thanh toán tiền mặt. |
-| **Admin** | Web Admin Portal | Quản trị tài khoản, phê duyệt KYC kỹ thuật viên, cấu hình danh mục dịch vụ & giá niêm yết, quản lý linh kiện chính hãng, cấu hình khu vực hoạt động, xem báo cáo doanh thu & dashboard. |
+| **Service Manager** | Web Console Portal | Giám sát hàng đợi hỗ trợ sự cố / tranh chấp đơn (`SupportCase`), đối soát giải quyết khiếu nại tiền mặt tại chỗ, điều phối ngoại lệ, xem ngữ cảnh đơn hàng chỉ đọc (read-only dispatch context). |
+| **Admin** | Web Console Portal | Quản trị tài khoản người dùng, phê duyệt hồ sơ KYC kỹ thuật viên (Private Supabase Storage kèm Signed URL), quản lý danh mục dịch vụ & giá niêm yết, quản lý danh mục linh kiện chính hãng (FixHome Part Catalog), cấu hình hệ thống (Config Registry), kiểm toán vận hành (Audit Log) và đối soát công nợ (PlatformDue). |
 
 ---
 
 ## 5. Project Scope
 
-### 5.1 In Scope (Phạm vi hiện tại — Spec v1.4)
-- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC).
-- **Danh mục Dịch vụ & Linh kiện:** Phân cấp danh mục cha con, dịch vụ giá cố định (`FIXED_PRICE`) và khảo sát báo giá (`INSPECTION_REQUIRED`), danh mục linh kiện chính hãng FixHome (`is_fixhome_provided: true`) và linh kiện ngoài kèm bảo hành tùy chọn.
+### 5.1 In Scope (Phạm vi hiện tại — Spec v1.4 & Dev2)
+- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC) với phân định rõ rệt quyền Quản trị (Admin) và Vận hành hỗ trợ (Service Manager).
+- **Hồ sơ KYC Kỹ thuật viên bảo mật cao (Admin KYC):** Lưu trữ CCCD mặt trước, mặt sau và ảnh chụp chân dung (face photo) trên Private Storage Supabase, cơ chế cấp URL chữ ký điện tử có thời hạn (Signed Access URL), chỉ Admin và chính chủ mới có quyền truy cập (`fail-closed`). Đồng bộ trạng thái `VERIFIED` sang hồ sơ thợ và ghi nhật ký kiểm toán bất biến.
+- **Quản lý Sự cố & Hỗ trợ (Service Manager Support Cases):** Hàng đợi xử lý khiếu nại, giải quyết tranh chấp chênh lệch tiền mặt thanh toán tại chỗ (`CASH_DISPUTE`), ghi nhận lý do điều chỉnh và bảo vệ tính toàn vẹn của dữ liệu tài chính.
+- **Danh mục Dịch vụ & Linh kiện chính hãng:** Phân cấp danh mục cha con, dịch vụ giá cố định (`FIXED_PRICE` - chặn thợ ghi đè giá sàn) và khảo sát báo giá (`INSPECTION_REQUIRED`), danh mục linh kiện FixHome (Part Catalog) chỉ quản lý thông số, giá niêm yết và thời hạn bảo hành (hoàn toàn không quản lý kho vận WMS).
+- **Sổ đăng ký Cấu hình Hệ thống (Business Config Registry):** Đăng ký tập trung các tham số vận hành (tỷ lệ hoa hồng, thời gian huỷ đơn tự động, số ca tối đa/thợ) có phân loại trạng thái hiệu lực (`ACTIVE`, `PENDING_WIRING`, `STALE_REVIEW`).
+- **Nhật ký Kiểm toán Vận hành (Audit Log):** Cơ chế ghi nhật ký bất biến (append-only) cho mọi thao tác nhạy cảm của Admin và Service Manager.
 - **Khu vực hoạt động:** Chuẩn hóa theo mã định danh hành chính quận/huyện tại Hà Nội và TP.HCM.
 - **AI Diagnosis Adapter:** REST API chẩn đoán sự cố sơ bộ với cơ chế fallback tự động, hoàn toàn không chặn luồng nghiệp vụ.
 - **Booking & Matching:** Đặt lịch 5 bước, khám phá ứng viên thợ, shortlist tối đa 5 thợ, gửi lời mời tuần tự (Sequential Invitation) với khóa dòng chống race condition.
@@ -57,7 +61,7 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 - **State Machine D-22:** `ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED`.
 - **Check-in GPS & Bằng chứng ảnh:** Geofencing xác minh thợ đã tới vị trí khách hàng; chốt chặn bắt buộc ảnh `BEFORE` trước khi sửa và ảnh `AFTER` trước khi hoàn tất.
 - **Báo giá & Phát sinh:** Báo giá khảo sát thực tế, khách duyệt/từ chối; chi phí phát sinh D-11 bất biến có liên kết phiên bản `supersedesId`.
-- **Bảo mật Thanh toán:** Chặn đứng lỗ hổng fake PAID từ client; chuẩn hóa **Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation)** và đối soát công nợ.
+- **Bảo mật Tài chính & Thu công nợ:** Máy chủ làm thẩm quyền duy nhất xác thực thanh toán (`isOrderPaymentSatisfied`), chặn đứng lỗ hổng fake PAID từ client; chuẩn hóa **Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation)** và tự động trích nợ hoa hồng PlatformDue (chặn điều phối thợ nếu nợ quá hạn).
 - **Tiến trình đơn động (Real Timeline):** Đồng bộ trực tiếp từ `OrderStatusHistory`.
 - **Module Thông báo:** API và giao diện Thông báo, đếm số tin chưa đọc.
 - **Responsive Web:** Thanh điều hướng đáy (Bottom Navigation Bar) cho cả Customer và Technician trên thiết bị di động.
@@ -65,9 +69,10 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 
 ### 5.2 Out of Scope (Ngoại phạm vi)
 - **Module Chat giữa Khách hàng và Thợ:** **HOÀN TOÀN KHÔNG THUỘC PHẠM VI DEV 1**. Các bảng dữ liệu chat đã được drop sạch sẽ qua migration `1725901000000-DropDev1ChatTables.ts` để bàn giao cho developer chuyên trách.
+- **Chat trực tiếp giữa Service Manager và Thợ:** Chưa triển khai trong SEP-21; Quản lý xử lý sự cố thông qua quy trình Support Case có lưu vết Audit.
 - **Cổng thanh toán trực tuyến (VNPay / Online Payment):** Tạm thời chưa kích hoạt do chờ thông tin Merchant ID đối tác; hệ thống vận hành trơn tru qua Cash Dual-Confirmation.
 - **Live GPS Tracking liên tục theo thời gian thực:** Hiện tại sử dụng xác thực GPS Check-in tại điểm đến.
-- **Quản lý kho vận phức tạp (Warehouse / Inventory Management):** FixHome cung cấp danh mục định giá linh kiện mà không theo dõi tồn kho vật lý đa kho.
+- **Quản lý kho vận phức tạp (Warehouse / Inventory Management / WMS):** FixHome cung cấp danh mục định giá linh kiện mà không theo dõi tồn kho vật lý đa kho.
 
 ---
 
@@ -75,9 +80,9 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 
 | # | Module | Backend | Web Frontend | Mobile App | Trạng thái |
 |---|--------|---------|--------------|------------|:---:|
-| 1 | Auth & JWT & RBAC | ✅ Dual-token, bcrypt, loose UUID | ✅ Pinia auth store, silent refresh | ✅ Zustand, SecureStore | **COMPLETED** |
+| 1 | Auth & JWT & RBAC | ✅ Dual-token, bcrypt, valid UUID v4 | ✅ Pinia auth store, session recovery | ✅ Zustand, SecureStore | **COMPLETED** |
 | 2 | User & Addresses | ✅ CRUD, default address, ownership | ✅ Customer Profile, tab Sổ địa chỉ | ✅ Profile screen | **COMPLETED** |
-| 3 | Technician Profile & KYC | ✅ Documents KYC, admin approval | ✅ Tech Profile, Verification upload | ✅ Profile screen | **COMPLETED** |
+| 3 | Technician Profile & KYC | ✅ Documents KYC, private storage signed URLs | ✅ Tech Profile, Verification upload | ✅ Profile screen | **COMPLETED** |
 | 4 | Technician Schedule | ✅ Ca làm việc trong tuần, slot check | ✅ Tech Schedule management | — | **COMPLETED** |
 | 5 | Service Catalog & Pricing | ✅ Fixed price & Inspection required | ✅ Service browsing, detail | — | **COMPLETED** |
 | 6 | Parts Catalog | ✅ FixHome vs Tech parts, warranty | ✅ Dynamic parts selection in quote | — | **COMPLETED** |
@@ -97,6 +102,12 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 | 20 | Reviews & Ratings | ✅ D-09 single review, average rating | ✅ Post-service review modal | — | **COMPLETED** |
 | 21 | Warranties & Claims | ✅ Warranty policy & claim flow | ✅ Customer Warranties page | — | **COMPLETED** |
 | 22 | Role Dashboards | ✅ 4 role-tailored dashboard metrics | ✅ Customer & Tech dashboards | — | **COMPLETED** |
+| 23 | Support Cases & Cash Disputes | ✅ Support Cases module, resolve & escalate | ✅ Support Queue & Cash Dispute Detail | — | **COMPLETED** |
+| 24 | Admin KYC Verification Review | ✅ Admin review, VERIFIED sync, signed media | ✅ Admin Verifications page | — | **COMPLETED** |
+| 25 | Admin Part Catalog Management | ✅ FixHome parts CRUD, pricing, warranty | ✅ Admin Parts Catalog page | — | **COMPLETED** |
+| 26 | System Config Registry | ✅ Centralized config, effectivity status | ✅ Admin Config page | — | **COMPLETED** |
+| 27 | Operational Audit Log | ✅ Append-only audit logger & controller | ✅ Admin Audit Logs page | — | **COMPLETED** |
+| 28 | Server-Authoritative Finance | ✅ Finance module, payment satisfaction port | ✅ Admin Platform Dues & Finance Audit | — | **COMPLETED** |
 
 ---
 
