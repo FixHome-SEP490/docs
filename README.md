@@ -10,15 +10,17 @@
 
 ---
 
-## Key Documents (Tài liệu Trọng tâm v1.4)
+## Key Documents (Tài liệu Trọng tâm v2.0)
 
-- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) — **Single Source of Truth** (Đặc tả tổng quan kiến trúc & hệ thống)
-- [Master Project Specification v1.4](docs/FIXHOME-Master-Project-Specification-v1.4.md) — Tài liệu nghiệp vụ & kỹ thuật chuẩn nhóm (Baseline hiện tại)
+- [SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md](architecture/SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md) — **Kiến trúc Hệ thống & Cấu trúc Chi tiết Từng File (BE, FE, AI, Mobile)**
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) — **Single Source of Truth** (Đặc tả tổng quan kiến trúc & hệ thống v2.0)
+- [Master Project Specification v1.4](docs/FIXHOME-Master-Project-Specification-v1.4.md) — Tài liệu nghiệp vụ & kỹ thuật chuẩn nhóm
 - [Dev 1 Implementation Plan v1.4](docs/FIXHOME-DEV1-IMPLEMENTATION-PLAN-v1.4.md) — Kế hoạch thực thi & bàn giao chi tiết của Dev 1
 - [Dev 1 Fix & Audit Report](docs/DEV1-FIX-REPORT.md) — Báo cáo nghiệm thu 24 task sửa lỗi, dọn dẹp Chat và kiểm thử Dev 1
+- [Full API Integration Report](docs/FULL-API-INTEGRATION-REPORT.md) — Báo cáo kiểm định tích hợp API toàn diện giữa Web, Mobile và Backend
+- [Final Integration Checklist](docs/FINAL-INTEGRATION-CHECKLIST.md) — Checklist chốt chặn kiểm thử trước demo
 - [API v1.4 Changelog](docs/API_V1_4_CHANGELOG.md) — Hợp đồng API v1.4 (Reschedule, Withdraw, Cash Dual-Confirmation, Notifications, Parts...)
-- [Database v1.4 Migrations](docs/DATABASE_V1_4_MIGRATION_PLAN.md) — Kế hoạch & cấu trúc 14 migration TypeORM trong PostgreSQL
-- [Test Coverage v1.4](docs/TEST_COVERAGE_V1_4.md) — Báo cáo chất lượng (129 Backend tests + 14 Web tests passing 100%)
+- [Database v1.4 Migrations](docs/DATABASE_V1_4_MIGRATION_PLAN.md) — Kế hoạch & cấu trúc migration TypeORM trong PostgreSQL
 - [CURRENT_TASKS.md](CURRENT_TASKS.md) — Trạng thái dự án, danh sách task hoàn thành và backlog
 - [REPOSITORY_GUIDE.md](REPOSITORY_GUIDE.md) — Bản đồ repo và hướng dẫn setup local
 - [AGENTS.md](AGENTS.md) — Hướng dẫn cho AI coding agents
@@ -30,13 +32,14 @@
 
 | Thư mục | Nội dung |
 |---------|---------|
-| `docs/` | Các bản đặc tả nghiệp vụ v1.4, kế hoạch triển khai, báo cáo audit, API & DB migration plans |
+| `docs/` | Các bản đặc tả nghiệp vụ v1.4/v2.0, kế hoạch triển khai, báo cáo audit, API & DB migration plans, checklist tích hợp |
 | `api/` | Chi tiết hợp đồng API: Auth, Bookings & Orders, Notifications, Parts & Quotes, Tech KYC |
 | `requirements/` | Yêu cầu chức năng (FRs), actors, phạm vi dự án (In-Scope & Out-of-Scope) |
-| `architecture/` | Kiến trúc hệ thống, phân biệt Booking vs Service Order, State Machine D-22 |
+| `architecture/` | Kiến trúc hệ thống, phân rã chi tiết file 4 phân hệ (`SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md`), State Machine D-22 |
 | `database/` | Quy chuẩn database, danh sách migrations và lược đồ quan hệ |
 | `deployment/` | Hướng dẫn triển khai Docker & Production |
-| `testing/` | Kế hoạch kiểm thử và acceptance criteria |
+| `testing/` | Kế hoạch kiểm thử, acceptance criteria và kết quả audit (`integration-audit/`) |
+| `scripts/` | Script kiểm thử tích hợp tự động (`audit-integration.cjs`) |
 | `assets/` | Logo, sơ đồ kiến trúc và hình ảnh minh họa |
 
 ---
@@ -44,13 +47,13 @@
 ## Architecture Overview
 
 ```text
-Web (Vue.js 3) ────────┐
-(Customer & Tech Web)   │
-                        ├──> NestJS Backend API ───> PostgreSQL 16 (14 Migrations)
-Mobile (React Native) ──┤    (State Machine D-22,
-(Customer & Tech App)   │     Zero Mock Data)
-                        │
-                        └──> FastAPI AI Service ───> Gemini / OpenAI (Advisory Only)
+Web (Vue 3 + Vite) ────────┐
+(Customer, Tech & Console)  │
+                            ├──> NestJS Backend API ───> PostgreSQL 16 (16 Migrations)
+Mobile (React Native Expo) ──┤    (State Machine D-22,
+(Customer & Tech App)       │     Zero Mock Data, 5-Layer Guards)
+                            │
+                            └──> FastAPI AI Service ───> YOLO11s (22 thiết bị) + Qwen2.5-VL + RAG
 ```
 
 ---
@@ -59,11 +62,11 @@ Mobile (React Native) ──┤    (State Machine D-22,
 
 | Thành phần | Công nghệ chính | Trạng thái Chất lượng (Quality Gate) |
 | :--- | :--- | :--- |
-| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16 | **129/129 tests pass** (20 suites), 0 lint error (`oxlint`), 0 type error, build dist pass |
-| **Web** | Vue.js 3, Vite, TailwindCSS, Pinia, TypeScript | **14/14 tests pass** (3 suites), 0 lint error (`eslint`), 0 type error, Vite build pass |
-| **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | Lint pass, Liquid TabBar, Profile screens |
-| **AI Service** | FastAPI, Python, Pytest | Health & provider tests pass, advisory stub |
-| **Database** | PostgreSQL 16 (Docker) | **14 migrations** chạy trơn tru (`1725888000000` -> `1725901000000`) |
+| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16 | **392/392 unit tests pass** (51 suites), **57/57 E2E tests pass**, 0 lint error (`oxlint`), 0 type error, build dist pass |
+| **Web** | Vue.js 3, Vite, TailwindCSS v4, Pinia, TypeScript | **109/109 tests pass**, 0 lint error (`eslint`), 0 type error, Vite build pass |
+| **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | Lint pass, Navigation Customer & Tech, Profile, Jobs, Chat Socket |
+| **AI Service** | FastAPI, Python 3.11, vLLM, YOLO11s, Qwen2.5-VL | 4-tier engine: Hội thoại -> Thị giác -> Tri thức (3.319 đoạn) -> Ngôn ngữ |
+| **Database** | PostgreSQL 16 (Docker) | **16 migrations** chạy trơn tru |
 
 ---
 
