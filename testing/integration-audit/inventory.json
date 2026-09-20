@@ -1,0 +1,3421 @@
+{
+  "counts": {
+    "Backend-FixHome": {
+      "sourceFiles": 339,
+      "modules": 24,
+      "controllers": 30,
+      "services": 27,
+      "dtos": 48,
+      "entities": 48,
+      "guards": 7,
+      "gateways": 0,
+      "pages": 0
+    },
+    "Frontend-FixHome": {
+      "sourceFiles": 91,
+      "modules": 0,
+      "controllers": 0,
+      "services": 0,
+      "dtos": 0,
+      "entities": 0,
+      "guards": 0,
+      "gateways": 0,
+      "pages": 43
+    },
+    "Mobi-FixHome": {
+      "sourceFiles": 46,
+      "modules": 0,
+      "controllers": 0,
+      "services": 1,
+      "dtos": 0,
+      "entities": 0,
+      "guards": 0,
+      "gateways": 0,
+      "pages": 19
+    }
+  },
+  "routes": [
+    {
+      "module": "audit-log",
+      "method": "GET",
+      "route": "/admin/audit-logs",
+      "file": "Backend-FixHome/src/modules/audit-log/admin-audit-log.controller.ts",
+      "line": 38,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'audit:read'",
+      "parameters": "@Query() query: QueryAuditLogDto",
+      "body": "{\r\n    const { data, total } = await this.auditLogService.findAll({\r\n      page: query.page,\r\n      limit: query.limit,\r\n      resourceType: query.resourceType,\r\n      actorUserId: query.actorUserId,\r\n      action: query.action,\r\n    });\r\n    return {\r\n      data,\r\n      meta: {\r\n        page: query.page,\r\n        limit: query.limit,\r\n        total,\r\n        totalPages: Math.ceil(total / query.limit),\r\n      },\r\n    };\r\n  }"
+    },
+    {
+      "module": "audit-log",
+      "method": "GET",
+      "route": "/admin/audit-logs/:id",
+      "file": "Backend-FixHome/src/modules/audit-log/admin-audit-log.controller.ts",
+      "line": 72,
+      "handler": "findOne",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'audit:read'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    const entry = await this.auditLogService.findById(id);\r\n    if (!entry) {\r\n      throw new NotFoundException(`Audit log entry ${id} not found`);\r\n    }\r\n    return entry;\r\n  }"
+    },
+    {
+      "module": "auth",
+      "method": "POST",
+      "route": "/auth/register",
+      "file": "Backend-FixHome/src/modules/auth/auth.controller.ts",
+      "line": 37,
+      "handler": "register",
+      "guards": "ThrottlerGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Body() dto: RegisterDto",
+      "body": "{\n    return this.authService.register(dto);\n  }"
+    },
+    {
+      "module": "auth",
+      "method": "POST",
+      "route": "/auth/login",
+      "file": "Backend-FixHome/src/modules/auth/auth.controller.ts",
+      "line": 59,
+      "handler": "login",
+      "guards": "ThrottlerGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Body() dto: LoginDto",
+      "body": "{\n    return this.authService.login(dto);\n  }"
+    },
+    {
+      "module": "auth",
+      "method": "POST",
+      "route": "/auth/refresh",
+      "file": "Backend-FixHome/src/modules/auth/auth.controller.ts",
+      "line": 81,
+      "handler": "refresh",
+      "guards": "ThrottlerGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Body() dto: RefreshTokenDto",
+      "body": "{\n    return this.authService.refresh(dto);\n  }"
+    },
+    {
+      "module": "auth",
+      "method": "POST",
+      "route": "/auth/logout",
+      "file": "Backend-FixHome/src/modules/auth/auth.controller.ts",
+      "line": 103,
+      "handler": "logout",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string; @Body() dto: LogoutDto",
+      "body": "{\n    return this.authService.logout(userId, dto?.refreshToken);\n  }"
+    },
+    {
+      "module": "auth",
+      "method": "GET",
+      "route": "/auth/me",
+      "file": "Backend-FixHome/src/modules/auth/auth.controller.ts",
+      "line": 120,
+      "handler": "getMe",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string",
+      "body": "{\n    return this.authService.getMe(userId);\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "POST",
+      "route": "/bookings",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 34,
+      "handler": "create",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'booking:create'",
+      "parameters": "@Body() dto: CreateBookingDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const booking = await this.bookingsService.create(dto, req.user);\r\n    return { data: booking };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "GET",
+      "route": "/bookings/my",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 44,
+      "handler": "findMy",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'booking:read_own'",
+      "parameters": "@Req() req: { user: { id: string } }; @Query('page') page?: string; @Query('pageSize') pageSize?: string; @Query('status') status?: BookingStatus",
+      "body": "{\r\n    const result = await this.bookingsService.findMyBookings(req.user.id, {\r\n      page: page ? parseInt(page, 10) : 1,\r\n      limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n      status,\r\n    });\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "GET",
+      "route": "/bookings/:id",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 63,
+      "handler": "findById",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    await this.bookingsService.findById(id, req.user);\r\n    await this.invitationsService.refreshMatching(id);\r\n    const booking = await this.bookingsService.findById(id, req.user);\r\n    return { data: booking };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "POST",
+      "route": "/bookings/:id/media",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 74,
+      "handler": "attachMedia",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'booking:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: { url: string; mimeType?: string; sizeBytes?: number }; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const media = await this.bookingsService.attachMedia(id, body, req.user);\r\n    return { data: media };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "GET",
+      "route": "/bookings/:id/technician-candidates",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 89,
+      "handler": "getCandidates",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'invitation:shortlist'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string } }",
+      "body": "{\r\n    const candidates = await this.bookingsService.getCandidates(id, req.user);\r\n    return { data: candidates };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "POST",
+      "route": "/bookings/:id/shortlist",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 102,
+      "handler": "createShortlist",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'invitation:shortlist'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: ShortlistDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const invitations = await this.invitationsService.createShortlist(\r\n      id,\r\n      body.technicianIds,\r\n      req.user,\r\n    );\r\n    return { data: invitations };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "PATCH",
+      "route": "/bookings/:id/schedule",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 121,
+      "handler": "reschedule",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'booking:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: ScheduleBookingDto; @Req() req: { user: { id: string } }",
+      "body": "{\r\n    const booking = await this.bookingsService.reschedule(id, body, req.user);\r\n    return { data: booking };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "POST",
+      "route": "/bookings/:id/cancel",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 135,
+      "handler": "cancelBooking",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'booking:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: ReasonDto; @Req() req: { user: { id: string } }",
+      "body": "{\r\n    return { data: await this.bookingsService.cancelBooking(id, body.reason, req.user) };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "POST",
+      "route": "/bookings/:id/rebook",
+      "file": "Backend-FixHome/src/modules/bookings/bookings.controller.ts",
+      "line": 144,
+      "handler": "rebook",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'booking:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body()\r\n    body: RebookDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const newBooking = await this.bookingsService.rebook(id, req.user, body);\r\n    return { data: newBooking };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "GET",
+      "route": "/invitations/my",
+      "file": "Backend-FixHome/src/modules/bookings/invitations.controller.ts",
+      "line": 26,
+      "handler": "getMyInvitations",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'invitation:respond'",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const invitations = await this.invitationsService.getMyInvitations(\r\n      req.user.id,\r\n    );\r\n    return { data: invitations };\r\n  }"
+    },
+    {
+      "module": "bookings",
+      "method": "POST",
+      "route": "/invitations/:id/respond",
+      "file": "Backend-FixHome/src/modules/bookings/invitations.controller.ts",
+      "line": 38,
+      "handler": "respond",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'invitation:respond'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: InvitationResponseDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const result = await this.invitationsService.respond(\r\n      id,\r\n      body.action,\r\n      req.user,\r\n    );\r\n    return { data: result };\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "DELETE",
+      "route": "/admin/service-categories/:id",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 47,
+      "handler": "deactivate",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.toggleStatus(id, false, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "GET",
+      "route": "/admin/service-categories",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 62,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "",
+      "body": "{\r\n    return this.categoriesService.findAll(false);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "POST",
+      "route": "/admin/service-categories",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 75,
+      "handler": "create",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Body() dto: CreateCategoryDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.create(dto, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "PATCH",
+      "route": "/admin/service-categories/:id",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 89,
+      "handler": "update",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateCategoryDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.update(id, dto, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "PATCH",
+      "route": "/admin/service-categories/:id/status",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 106,
+      "handler": "toggleStatus",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateActiveStatusDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.toggleStatus(id, dto.isActive, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "DELETE",
+      "route": "/admin/categories/:id",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 47,
+      "handler": "deactivate",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.toggleStatus(id, false, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "GET",
+      "route": "/admin/categories",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 62,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "",
+      "body": "{\r\n    return this.categoriesService.findAll(false);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "POST",
+      "route": "/admin/categories",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 75,
+      "handler": "create",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Body() dto: CreateCategoryDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.create(dto, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "PATCH",
+      "route": "/admin/categories/:id",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 89,
+      "handler": "update",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateCategoryDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.update(id, dto, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "PATCH",
+      "route": "/admin/categories/:id/status",
+      "file": "Backend-FixHome/src/modules/categories/admin-categories.controller.ts",
+      "line": 106,
+      "handler": "toggleStatus",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateActiveStatusDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.categoriesService.toggleStatus(id, dto.isActive, user);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "GET",
+      "route": "/service-categories",
+      "file": "Backend-FixHome/src/modules/categories/categories.controller.ts",
+      "line": 17,
+      "handler": "findAll",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "",
+      "body": "{\r\n    return this.categoriesService.findAll(true);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "GET",
+      "route": "/service-categories/:idOrSlug",
+      "file": "Backend-FixHome/src/modules/categories/categories.controller.ts",
+      "line": 28,
+      "handler": "findByIdOrSlug",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('idOrSlug') idOrSlug: string",
+      "body": "{\r\n    return this.categoriesService.findByIdOrSlug(idOrSlug, true);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "GET",
+      "route": "/categories",
+      "file": "Backend-FixHome/src/modules/categories/categories.controller.ts",
+      "line": 17,
+      "handler": "findAll",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "",
+      "body": "{\r\n    return this.categoriesService.findAll(true);\r\n  }"
+    },
+    {
+      "module": "categories",
+      "method": "GET",
+      "route": "/categories/:idOrSlug",
+      "file": "Backend-FixHome/src/modules/categories/categories.controller.ts",
+      "line": 28,
+      "handler": "findByIdOrSlug",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('idOrSlug') idOrSlug: string",
+      "body": "{\r\n    return this.categoriesService.findByIdOrSlug(idOrSlug, true);\r\n  }"
+    },
+    {
+      "module": "dashboard",
+      "method": "GET",
+      "route": "/dashboard/customer",
+      "file": "Backend-FixHome/src/modules/dashboard/dashboard.controller.ts",
+      "line": 14,
+      "handler": "getCustomerDashboard",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'dashboard:read_own'",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const data = await this.dashboardService.getCustomerDashboard(req.user.id);\r\n    return { data };\r\n  }"
+    },
+    {
+      "module": "dashboard",
+      "method": "GET",
+      "route": "/dashboard/technician",
+      "file": "Backend-FixHome/src/modules/dashboard/dashboard.controller.ts",
+      "line": 24,
+      "handler": "getTechnicianDashboard",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'dashboard:read_own'",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const data = await this.dashboardService.getTechnicianDashboard(req.user.id);\r\n    return { data };\r\n  }"
+    },
+    {
+      "module": "dashboard",
+      "method": "GET",
+      "route": "/dashboard/operations",
+      "file": "Backend-FixHome/src/modules/dashboard/dashboard.controller.ts",
+      "line": 34,
+      "handler": "getOperationalDashboard",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'dashboard:read_operational'",
+      "parameters": "",
+      "body": "{\r\n    const data = await this.dashboardService.getOperationalDashboard();\r\n    return { data };\r\n  }"
+    },
+    {
+      "module": "dashboard",
+      "method": "GET",
+      "route": "/dashboard/system",
+      "file": "Backend-FixHome/src/modules/dashboard/dashboard.controller.ts",
+      "line": 44,
+      "handler": "getSystemDashboard",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'dashboard:read_system'",
+      "parameters": "",
+      "body": "{\r\n    const data = await this.dashboardService.getSystemDashboard();\r\n    return { data };\r\n  }"
+    },
+    {
+      "module": "finance",
+      "method": "GET",
+      "route": "/finance/platform-dues",
+      "file": "Backend-FixHome/src/modules/finance/finance.controller.ts",
+      "line": 34,
+      "handler": "listPlatformDues",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'invoice:read_related'",
+      "parameters": "@Query() query: PlatformDueQueryDto",
+      "body": "{\r\n    const result = await this.financeService.listPlatformDues(query);\r\n    return {\r\n      data: result.data,\r\n      meta: {\r\n        page: query.page,\r\n        limit: query.limit,\r\n        total: result.total,\r\n        totalPages: Math.ceil(result.total / query.limit),\r\n      },\r\n    };\r\n  }"
+    },
+    {
+      "module": "health",
+      "method": "GET",
+      "route": "/health",
+      "file": "Backend-FixHome/src/modules/health/health.controller.ts",
+      "line": 11,
+      "handler": "check",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "",
+      "body": "{\n    return this.healthService.check();\n  }"
+    },
+    {
+      "module": "health",
+      "method": "GET",
+      "route": "/api/v1/health",
+      "file": "Backend-FixHome/src/modules/health/health.controller.ts",
+      "line": 11,
+      "handler": "check",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "",
+      "body": "{\n    return this.healthService.check();\n  }"
+    },
+    {
+      "module": "media",
+      "method": "POST",
+      "route": "/media/upload",
+      "file": "Backend-FixHome/src/modules/media/media.controller.ts",
+      "line": 26,
+      "handler": "uploadFile",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@UploadedFile() file?: UploadedMediaFile",
+      "body": "{\r\n    const result = await this.mediaService.saveFile(file!);\r\n    return { data: result };\r\n  }"
+    },
+    {
+      "module": "media",
+      "method": "GET",
+      "route": "/media/files/:filename",
+      "file": "Backend-FixHome/src/modules/media/media.controller.ts",
+      "line": 42,
+      "handler": "getFile",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('filename') filename: string; @Res() res: Response",
+      "body": "{\r\n    const { filePath, mimeType } = this.mediaService.getFilePath(filename);\r\n    res.setHeader('Content-Type', mimeType);\r\n    res.setHeader('X-Content-Type-Options', 'nosniff');\r\n    res.setHeader('Cache-Control', 'public, max-age=86400');\r\n    const stream = fs.createReadStream(filePath);\r\n    stream.pipe(res);\r\n  }"
+    },
+    {
+      "module": "notifications",
+      "method": "GET",
+      "route": "/notifications",
+      "file": "Backend-FixHome/src/modules/notifications/notifications.controller.ts",
+      "line": 23,
+      "handler": "getMyNotifications",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }; @Query('page') page?: string; @Query('limit') limit?: string",
+      "body": "{\r\n    const p = Math.max(1, parseInt(page || '1', 10) || 1);\r\n    const l = Math.min(100, Math.max(1, parseInt(limit || '20', 10) || 20));\r\n    return this.notificationsService.getMyNotifications(req.user.id, p, l);\r\n  }"
+    },
+    {
+      "module": "notifications",
+      "method": "GET",
+      "route": "/notifications/unread-count",
+      "file": "Backend-FixHome/src/modules/notifications/notifications.controller.ts",
+      "line": 35,
+      "handler": "getUnreadCount",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    return this.notificationsService.getUnreadCount(req.user.id);\r\n  }"
+    },
+    {
+      "module": "notifications",
+      "method": "PATCH",
+      "route": "/notifications/:id/read",
+      "file": "Backend-FixHome/src/modules/notifications/notifications.controller.ts",
+      "line": 41,
+      "handler": "markAsRead",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string } }",
+      "body": "{\r\n    return this.notificationsService.markAsRead(id, req.user.id);\r\n  }"
+    },
+    {
+      "module": "notifications",
+      "method": "PATCH",
+      "route": "/notifications/read-all",
+      "file": "Backend-FixHome/src/modules/notifications/notifications.controller.ts",
+      "line": 50,
+      "handler": "markAllAsRead",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    return this.notificationsService.markAllAsRead(req.user.id);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "GET",
+      "route": "/admin/parts",
+      "file": "Backend-FixHome/src/modules/parts-catalog/admin-parts.controller.ts",
+      "line": 48,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Query() query: QueryFixHomePartsDto",
+      "body": "{\r\n    return this.partsCatalogService.findAdmin(query);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "GET",
+      "route": "/admin/parts/:id",
+      "file": "Backend-FixHome/src/modules/parts-catalog/admin-parts.controller.ts",
+      "line": 64,
+      "handler": "findById",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    return this.partsCatalogService.findById(id);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "POST",
+      "route": "/admin/parts",
+      "file": "Backend-FixHome/src/modules/parts-catalog/admin-parts.controller.ts",
+      "line": 81,
+      "handler": "create",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Body() dto: CreateFixHomePartDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.partsCatalogService.create(dto, user);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "PATCH",
+      "route": "/admin/parts/:id",
+      "file": "Backend-FixHome/src/modules/parts-catalog/admin-parts.controller.ts",
+      "line": 97,
+      "handler": "update",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateFixHomePartDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.partsCatalogService.update(id, dto, user);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "PATCH",
+      "route": "/admin/parts/:id/status",
+      "file": "Backend-FixHome/src/modules/parts-catalog/admin-parts.controller.ts",
+      "line": 121,
+      "handler": "toggleStatus",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateActiveStatusDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.partsCatalogService.toggleStatus(id, dto.isActive, user);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "GET",
+      "route": "/parts/catalog",
+      "file": "Backend-FixHome/src/modules/parts-catalog/parts-catalog.controller.ts",
+      "line": 29,
+      "handler": "findCatalog",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.TECHNICIAN, Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'service:read'",
+      "parameters": "@Query() query: QueryFixHomeCatalogDto",
+      "body": "{\r\n    return this.partsCatalogService.findCatalog(query);\r\n  }"
+    },
+    {
+      "module": "parts-catalog",
+      "method": "GET",
+      "route": "/parts/catalog/:id",
+      "file": "Backend-FixHome/src/modules/parts-catalog/parts-catalog.controller.ts",
+      "line": 45,
+      "handler": "findActiveById",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.TECHNICIAN, Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'service:read'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    return this.partsCatalogService.findActiveById(id);\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "POST",
+      "route": "/service-orders/:id/quotations",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 28,
+      "handler": "createQuotation",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'quotation:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Body() dto: CreateQuotationDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const quotation = await this.quotationsService.createQuotation(\r\n      orderId,\r\n      dto,\r\n      req.user,\r\n    );\r\n    return { data: quotation };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "GET",
+      "route": "/service-orders/:id/quotations",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 47,
+      "handler": "getQuotations",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'quotation:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const quotations = await this.quotationsService.findByOrderId(orderId, req.user);\r\n    return { data: quotations };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "GET",
+      "route": "/quotations/:id",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 57,
+      "handler": "getQuotationById",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'quotation:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const quotation = await this.quotationsService.findById(id, req.user);\r\n    return { data: quotation };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "POST",
+      "route": "/quotations/:id/decision",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 67,
+      "handler": "decideQuotation",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: FinancialDecisionDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const quotation = await this.quotationsService.decideQuotation(\r\n      id,\r\n      body.action,\r\n      req.user,\r\n      body.paidWarrantyItemIds,\r\n    );\r\n    return { data: quotation };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "POST",
+      "route": "/service-orders/:id/additional-costs",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 88,
+      "handler": "createAdditionalCost",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'additional_cost:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Body() dto: CreateAdditionalCostDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const request = await this.quotationsService.createAdditionalCost(\r\n      orderId,\r\n      dto,\r\n      req.user,\r\n    );\r\n    return { data: request };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "GET",
+      "route": "/service-orders/:id/additional-costs",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 107,
+      "handler": "getAdditionalCosts",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const requests = await this.quotationsService.findAdditionalCostsByOrderId(orderId, req.user);\r\n    return { data: requests };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "POST",
+      "route": "/additional-costs/:id/decision",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 117,
+      "handler": "decideAdditionalCost",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: FinancialDecisionDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const request = await this.quotationsService.decideAdditionalCost(\r\n      id,\r\n      body.action,\r\n      req.user,\r\n      body.paidWarrantyItemIds,\r\n    );\r\n    return { data: request };\r\n  }"
+    },
+    {
+      "module": "quotations",
+      "method": "POST",
+      "route": "/additional-costs/:id/revise",
+      "file": "Backend-FixHome/src/modules/quotations/quotations.controller.ts",
+      "line": 136,
+      "handler": "reviseAdditionalCost",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'additional_cost:revise'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: CreateAdditionalCostDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const revised = await this.quotationsService.reviseAdditionalCost(\r\n      id,\r\n      dto,\r\n      req.user,\r\n    );\r\n    return { data: revised };\r\n  }"
+    },
+    {
+      "module": "reviews",
+      "method": "POST",
+      "route": "/service-orders/:id/reviews",
+      "file": "Backend-FixHome/src/modules/reviews/reviews.controller.ts",
+      "line": 27,
+      "handler": "createReview",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'rating:create_own_order'",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Body() dto: CreateReviewDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const review = await this.reviewsService.createReview(\r\n      orderId,\r\n      dto,\r\n      req.user,\r\n    );\r\n    return { data: review };\r\n  }"
+    },
+    {
+      "module": "reviews",
+      "method": "POST",
+      "route": "/reviews",
+      "file": "Backend-FixHome/src/modules/reviews/reviews.controller.ts",
+      "line": 46,
+      "handler": "createReviewCanonical",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'rating:create_own_order'",
+      "parameters": "@Body() dto: CreateOrderReviewDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const orderId = dto.serviceOrderId;\r\n    const review = await this.reviewsService.createReview(orderId!, dto, req.user);\r\n    return { data: review };\r\n  }"
+    },
+    {
+      "module": "reviews",
+      "method": "GET",
+      "route": "/service-orders/:id/reviews",
+      "file": "Backend-FixHome/src/modules/reviews/reviews.controller.ts",
+      "line": 61,
+      "handler": "getByOrderId",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const review = await this.reviewsService.findByOrderId(orderId, req.user);\r\n    return { data: review };\r\n  }"
+    },
+    {
+      "module": "reviews",
+      "method": "GET",
+      "route": "/technicians/:id/reviews",
+      "file": "Backend-FixHome/src/modules/reviews/reviews.controller.ts",
+      "line": 70,
+      "handler": "getByTechnicianId",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) technicianId: string; @Query('page') page?: string; @Query('pageSize') pageSize?: string",
+      "body": "{\r\n    const result = await this.reviewsService.findByTechnicianId(technicianId, {\r\n      page: page ? parseInt(page, 10) : 1,\r\n      limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n    });\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "service-areas",
+      "method": "GET",
+      "route": "/service-areas",
+      "file": "Backend-FixHome/src/modules/service-areas/service-areas.controller.ts",
+      "line": 37,
+      "handler": "findAll",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Query() query: QueryServiceAreaDto",
+      "body": "{\r\n    return this.serviceAreasService.findAll(query);\r\n  }"
+    },
+    {
+      "module": "service-areas",
+      "method": "GET",
+      "route": "/service-areas/:id",
+      "file": "Backend-FixHome/src/modules/service-areas/service-areas.controller.ts",
+      "line": 44,
+      "handler": "findById",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    return this.serviceAreasService.findById(id);\r\n  }"
+    },
+    {
+      "module": "service-areas",
+      "method": "POST",
+      "route": "/service-areas",
+      "file": "Backend-FixHome/src/modules/service-areas/service-areas.controller.ts",
+      "line": 52,
+      "handler": "create",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'service:manage'",
+      "parameters": "@Body() dto: CreateServiceAreaDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.serviceAreasService.create(dto, user);\r\n  }"
+    },
+    {
+      "module": "service-areas",
+      "method": "PATCH",
+      "route": "/service-areas/:id",
+      "file": "Backend-FixHome/src/modules/service-areas/service-areas.controller.ts",
+      "line": 67,
+      "handler": "update",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateServiceAreaDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.serviceAreasService.update(id, dto, user);\r\n  }"
+    },
+    {
+      "module": "service-areas",
+      "method": "PATCH",
+      "route": "/service-areas/:id/status",
+      "file": "Backend-FixHome/src/modules/service-areas/service-areas.controller.ts",
+      "line": 83,
+      "handler": "toggleStatus",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateActiveStatusDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.serviceAreasService.toggleStatus(id, dto.isActive, user);\r\n  }"
+    },
+    {
+      "module": "service-areas",
+      "method": "DELETE",
+      "route": "/service-areas/:id",
+      "file": "Backend-FixHome/src/modules/service-areas/service-areas.controller.ts",
+      "line": 98,
+      "handler": "deactivate",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @CurrentUser() user: User",
+      "body": "{\r\n    return this.serviceAreasService.toggleStatus(id, false, user);\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 57,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'order:read_related'",
+      "parameters": "@Query('page') page?: string; @Query('pageSize') pageSize?: string; @Query('status') status?: ServiceOrderStatus; @Query('search') search?: string",
+      "body": "{\r\n    const result = await this.serviceOrdersService.findAll({\r\n      page: page ? parseInt(page, 10) : 1,\r\n      limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n      status,\r\n      search,\r\n    });\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/my",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 78,
+      "handler": "findMy",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Req() req: { user: { id: string; role: string } }; @Query('page') page?: string; @Query('pageSize') pageSize?: string; @Query('status') status?: ServiceOrderStatus",
+      "body": "{\r\n    const result = await this.serviceOrdersService.findMyOrders(\r\n      req.user.id,\r\n      req.user.role,\r\n      {\r\n        page: page ? parseInt(page, 10) : 1,\r\n        limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n        status,\r\n      },\r\n    );\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 101,
+      "handler": "findById",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const order = await this.serviceOrdersService.findById(id, req.user);\r\n    return { data: order };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/en-route",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 116,
+      "handler": "enRoute",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:update_status'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const order = await this.serviceOrdersService.enRoute(id, req.user);\r\n    return { data: order };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/check-in",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 130,
+      "handler": "checkIn",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'arrival_checkin:create'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body()\r\n    body: CheckInDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const checkIn = await this.serviceOrdersService.checkIn(id, body, req.user);\r\n    return { data: checkIn };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/evidence",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 146,
+      "handler": "uploadEvidence",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'evidence:upload'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body()\r\n    body: EvidenceDto; @Req() req: { user: { id: string; role: string } }; @UploadedFile() file?: EvidenceFile",
+      "body": "{\r\n    const evidence = await this.serviceOrdersService.uploadEvidence(\r\n      id,\r\n      body,\r\n      req.user,\r\n      file,\r\n    );\r\n    return { data: evidence };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id/evidence",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 169,
+      "handler": "getEvidence",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const evidence = await this.serviceOrdersService.getEvidence(id, req.user);\r\n    return { data: evidence };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/start-repair",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 182,
+      "handler": "startRepair",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:update_status'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const order = await this.serviceOrdersService.startRepair(id, req.user);\r\n    return { data: order };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/request-completion",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 198,
+      "handler": "requestCompletion",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:update_status'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: CompletionRequestDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const order = await this.serviceOrdersService.requestCompletion(\r\n      id,\r\n      body,\r\n      req.user,\r\n    );\r\n    return { data: order };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/confirm-completion",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 219,
+      "handler": "confirmCompletion",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: CompletionConfirmationDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const result = await this.serviceOrdersService.confirmCompletion(\r\n      id,\r\n      body,\r\n      req.user,\r\n    );\r\n    return { data: result };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/complete",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 240,
+      "handler": "complete",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:update_status'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: CompletionRequestDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const order = await this.serviceOrdersService.complete(\r\n      id,\r\n      body,\r\n      req.user,\r\n    );\r\n    return { data: order };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/cancel",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 261,
+      "handler": "cancel",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:cancel'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: ReasonDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const order = await this.serviceOrdersService.cancel(\r\n      id,\r\n      body,\r\n      req.user,\r\n    );\r\n    return { data: order };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id/status-history",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 282,
+      "handler": "getStatusHistory",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_status_history'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const history = await this.serviceOrdersService.getStatusHistory(id, req.user);\r\n    return { data: history };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id/invoice",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 292,
+      "handler": "getInvoice",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'invoice:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const invoice = await this.serviceOrdersService.getInvoice(id, req.user);\r\n    return { data: invoice };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/invoices/:id/pay",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 307,
+      "handler": "payInvoice",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'invoice:pay_own'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: InitiatePaymentDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const payment = await this.serviceOrdersService.payInvoice(id, req.user, dto);\r\n    return { data: payment };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id/warranties",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 326,
+      "handler": "getWarranties",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'warranty:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const warranties = await this.serviceOrdersService.getWarranties(id, req.user);\r\n    return { data: warranties };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/cash-settlement/declare",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 338,
+      "handler": "declareCashSettlement",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:update_status'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: CashSettlementDeclarationDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const settlement = await this.serviceOrdersService.declareCashSettlement(id, body, req.user);\r\n    return { data: settlement };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/cash-settlement/confirm",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 356,
+      "handler": "confirmCashSettlement",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: CashSettlementConfirmationDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const settlement = await this.serviceOrdersService.confirmCashSettlement(id, body, req.user);\r\n    return { data: settlement };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id/cash-settlement",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 374,
+      "handler": "getCashSettlement",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const settlement = await this.serviceOrdersService.getCashSettlement(id, req.user);\r\n    return { data: settlement };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/commission-dues/my",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 390,
+      "handler": "getMyCommissionDues",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const result = await this.serviceOrdersService.getCommissionDues(req.user);\r\n    return { data: result.data, meta: { totalDue: result.totalDue } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/platform-dues/my",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 390,
+      "handler": "getMyCommissionDues",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const result = await this.serviceOrdersService.getCommissionDues(req.user);\r\n    return { data: result.data, meta: { totalDue: result.totalDue } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/commission-dues/:id/pay",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 401,
+      "handler": "payCommissionDue",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: InitiatePaymentDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const payment = await this.serviceOrdersService.payCommissionDue(id, req.user, dto);\r\n    return { data: payment };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/platform-dues/:id/pay",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 401,
+      "handler": "payCommissionDue",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: InitiatePaymentDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const payment = await this.serviceOrdersService.payCommissionDue(id, req.user, dto);\r\n    return { data: payment };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/service-orders/:id/warranty-claims",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 422,
+      "handler": "createWarrantyClaim",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: { description: string }; @Req() req: { user: { id: string } }",
+      "body": "{\r\n    const claim = await this.serviceOrdersService.createWarrantyClaim(id, body, req.user);\r\n    return { data: claim };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/service-orders/:id/warranty-claims",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 437,
+      "handler": "getWarrantyClaims",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'order:read_related'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const claims = await this.serviceOrdersService.getWarrantyClaims(id, req.user);\r\n    return { data: claims };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/repair-history",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 449,
+      "handler": "getRepairHistory",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'history:read_related'",
+      "parameters": "@Req() req: { user: { id: string; role: string } }; @Query('page') page?: string; @Query('pageSize') pageSize?: string",
+      "body": "{\r\n    const result = await this.serviceOrdersService.getRepairHistory(\r\n      req.user.id,\r\n      req.user.role,\r\n      {\r\n        page: page ? parseInt(page, 10) : 1,\r\n        limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n      },\r\n    );\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/cancellations",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 472,
+      "handler": "getCancellations",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'order:read_related'",
+      "parameters": "@Query('page') page?: string; @Query('pageSize') pageSize?: string",
+      "body": "{\r\n    const result = await this.serviceOrdersService.getCancellations({\r\n      page: page ? parseInt(page, 10) : 1,\r\n      limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n    });\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/cancellations/:id/review",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 489,
+      "handler": "reviewCancellation",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'compensation:decide'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body()\r\n    body: {\r\n      waiveStrike?: boolean;\r\n      waiveReason?: string;\r\n      compensationDecision?: 'GRANTED' | 'REJECTED';\r\n      grantPriorityBoost?: boolean;\r\n    }; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const cancellation = await this.serviceOrdersService.reviewCancellation(\r\n      id,\r\n      body,\r\n      req.user,\r\n    );\r\n    return { data: cancellation };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "GET",
+      "route": "/strikes",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 514,
+      "handler": "getStrikes",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'strike:read_all'",
+      "parameters": "@Query('userId') userId?: string; @Query('page') page?: string; @Query('pageSize') pageSize?: string",
+      "body": "{\r\n    const result = await this.serviceOrdersService.getStrikes({\r\n      userId,\r\n      page: page ? parseInt(page, 10) : 1,\r\n      limit: pageSize ? parseInt(pageSize, 10) : 20,\r\n    });\r\n    return { data: result.data, meta: { total: result.total } };\r\n  }"
+    },
+    {
+      "module": "service-orders",
+      "method": "POST",
+      "route": "/strikes/:id/waive",
+      "file": "Backend-FixHome/src/modules/service-orders/service-orders.controller.ts",
+      "line": 532,
+      "handler": "waiveStrike",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'strike:waive'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() body: ReasonDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const strike = await this.serviceOrdersService.waiveStrike(\r\n      id,\r\n      body,\r\n      req.user,\r\n    );\r\n    return { data: strike };\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "DELETE",
+      "route": "/admin/services/:id",
+      "file": "Backend-FixHome/src/modules/services/admin-services.controller.ts",
+      "line": 49,
+      "handler": "deactivate",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @CurrentUser() user: User",
+      "body": "{\r\n    return this.servicesService.toggleStatus(id, false, user);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "GET",
+      "route": "/admin/services",
+      "file": "Backend-FixHome/src/modules/services/admin-services.controller.ts",
+      "line": 64,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Query() query: QueryServicesDto",
+      "body": "{\r\n    return this.servicesService.findServices(query);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "GET",
+      "route": "/admin/services/:id",
+      "file": "Backend-FixHome/src/modules/services/admin-services.controller.ts",
+      "line": 78,
+      "handler": "findById",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    return this.servicesService.findById(id);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "POST",
+      "route": "/admin/services",
+      "file": "Backend-FixHome/src/modules/services/admin-services.controller.ts",
+      "line": 90,
+      "handler": "create",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Body() dto: CreateServiceDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.servicesService.create(dto, user);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "PATCH",
+      "route": "/admin/services/:id",
+      "file": "Backend-FixHome/src/modules/services/admin-services.controller.ts",
+      "line": 105,
+      "handler": "update",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateServiceDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.servicesService.update(id, dto, user);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "PATCH",
+      "route": "/admin/services/:id/status",
+      "file": "Backend-FixHome/src/modules/services/admin-services.controller.ts",
+      "line": 122,
+      "handler": "toggleStatus",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'service:manage'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateActiveStatusDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.servicesService.toggleStatus(id, dto.isActive, user);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "GET",
+      "route": "/parts",
+      "file": "Backend-FixHome/src/modules/services/parts.controller.ts",
+      "line": 17,
+      "handler": "getParts",
+      "guards": "JwtAuthGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Query('serviceId') serviceId?: string; @Query('search') search?: string",
+      "body": "{\r\n    const qb = this.partRepo.createQueryBuilder('p')\r\n      .where('p.is_active = true');\r\n\r\n    if (serviceId) {\r\n      qb.andWhere('(p.service_id = :serviceId OR p.service_id IS NULL)', { serviceId });\r\n    }\r\n\r\n    if (search) {\r\n      qb.andWhere('(p.name ILIKE :search OR p.code ILIKE :search)', { search: `%${search}%` });\r\n    }\r\n\r\n    qb.orderBy('p.name', 'ASC');\r\n\r\n    const parts = await qb.getMany();\r\n    return {\r\n      data: parts.map(p => ({\r\n        id: p.id,\r\n        code: p.code,\r\n        name: p.name,\r\n        serviceId: p.serviceId,\r\n        price: Number(p.price),\r\n        warrantyDays: p.warrantyDays,\r\n        warrantyPolicy: p.warrantyPolicy,\r\n        description: p.description,\r\n      })),\r\n    };\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "GET",
+      "route": "/services",
+      "file": "Backend-FixHome/src/modules/services/services.controller.ts",
+      "line": 18,
+      "handler": "findServices",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Query() query: QueryServicesDto",
+      "body": "{\r\n    query.isActive = true;\r\n    return this.servicesService.findServices(query, true);\r\n  }"
+    },
+    {
+      "module": "services",
+      "method": "GET",
+      "route": "/services/:idOrSlug",
+      "file": "Backend-FixHome/src/modules/services/services.controller.ts",
+      "line": 33,
+      "handler": "findByIdOrSlug",
+      "guards": "",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@Param('idOrSlug') idOrSlug: string",
+      "body": "{\r\n    return this.servicesService.findByIdOrSlug(idOrSlug, true);\r\n  }"
+    },
+    {
+      "module": "support-cases",
+      "method": "POST",
+      "route": "/support/cases",
+      "file": "Backend-FixHome/src/modules/support-cases/support-cases.controller.ts",
+      "line": 48,
+      "handler": "create",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN, Role.CUSTOMER, Role.TECHNICIAN",
+      "permissions": "'support:read_all', 'order:read_related'",
+      "parameters": "@Body() dto: CreateSupportCaseDto; @CurrentUser() actor: SupportCaseActor",
+      "body": "{\r\n    const created = await this.supportCasesService.openCaseForActor(dto, actor);\r\n    return this.supportCasesService.findById(created.id);\r\n  }"
+    },
+    {
+      "module": "support-cases",
+      "method": "GET",
+      "route": "/support/cases",
+      "file": "Backend-FixHome/src/modules/support-cases/support-cases.controller.ts",
+      "line": 75,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'support:read_all'",
+      "parameters": "@Query() query: QuerySupportCasesDto",
+      "body": "{\r\n    const result = await this.supportCasesService.findAll(query);\r\n    return {\r\n      data: result.data,\r\n      meta: {\r\n        page: query.page,\r\n        limit: query.limit,\r\n        total: result.total,\r\n        totalPages: Math.ceil(result.total / query.limit),\r\n      },\r\n    };\r\n  }"
+    },
+    {
+      "module": "support-cases",
+      "method": "GET",
+      "route": "/support/cases/:id",
+      "file": "Backend-FixHome/src/modules/support-cases/support-cases.controller.ts",
+      "line": 106,
+      "handler": "findOne",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'support:read_all'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    return this.supportCasesService.findById(id);\r\n  }"
+    },
+    {
+      "module": "support-cases",
+      "method": "POST",
+      "route": "/support/cases/:id/resolve",
+      "file": "Backend-FixHome/src/modules/support-cases/support-cases.controller.ts",
+      "line": 127,
+      "handler": "resolve",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN, Role.SERVICE_MANAGER",
+      "permissions": "'support:read_all', 'support:resolve'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: ResolveSupportCaseDto; @CurrentUser() actor: SupportCaseActor",
+      "body": "{\r\n    return this.supportCasesService.resolveCase(id, dto, actor);\r\n  }"
+    },
+    {
+      "module": "system-config",
+      "method": "GET",
+      "route": "/admin/config",
+      "file": "Backend-FixHome/src/modules/system-config/admin-config.controller.ts",
+      "line": 40,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'config:read'",
+      "parameters": "@Query() query: QueryConfigDto",
+      "body": "{\r\n    return this.adminConfigService.findAll(query.search);\r\n  }"
+    },
+    {
+      "module": "system-config",
+      "method": "GET",
+      "route": "/admin/config/:key",
+      "file": "Backend-FixHome/src/modules/system-config/admin-config.controller.ts",
+      "line": 60,
+      "handler": "findOne",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'config:read'",
+      "parameters": "@Param('key') key: string",
+      "body": "{\r\n    return this.adminConfigService.findOne(key);\r\n  }"
+    },
+    {
+      "module": "system-config",
+      "method": "PATCH",
+      "route": "/admin/config/:key",
+      "file": "Backend-FixHome/src/modules/system-config/admin-config.controller.ts",
+      "line": 75,
+      "handler": "update",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'config:read', 'config:update'",
+      "parameters": "@Param('key') key: string; @Body() dto: UpdateConfigDto; @CurrentUser() user: User",
+      "body": "{\r\n    return this.adminConfigService.update(key, dto.value, user.id, user.role);\r\n  }"
+    },
+    {
+      "module": "technician-assignment",
+      "method": "POST",
+      "route": "/technicians/:id/assign",
+      "file": "Backend-FixHome/src/modules/technician-assignment/technician-assignment.controller.ts",
+      "line": 27,
+      "handler": "assignTechnician",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'assignment:override'",
+      "parameters": "@Param('id', ParseUUIDPipe) technicianId: string; @Body() body: AssignByTechnicianDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const assignment = await this.technicianAssignmentService.overrideAssign(\r\n      technicianId,\r\n      body.orderId,\r\n      req.user,\r\n      body.reason,\r\n    );\r\n    return { data: assignment };\r\n  }"
+    },
+    {
+      "module": "technician-assignment",
+      "method": "POST",
+      "route": "/service-orders/:id/assign",
+      "file": "Backend-FixHome/src/modules/technician-assignment/technician-assignment.controller.ts",
+      "line": 49,
+      "handler": "assignByOrder",
+      "guards": "JwtAuthGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "'assignment:override'",
+      "parameters": "@Param('id', ParseUUIDPipe) orderId: string; @Body() body: AssignByOrderDto; @Req() req: { user: { id: string; role: string } }",
+      "body": "{\r\n    const assignment = await this.technicianAssignmentService.overrideAssign(\r\n      body.technicianId,\r\n      orderId,\r\n      req.user,\r\n      body.reason,\r\n    );\r\n    return { data: assignment };\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/admin/technician-verifications",
+      "file": "Backend-FixHome/src/modules/technician-verifications/admin-technician-verifications.controller.ts",
+      "line": 45,
+      "handler": "findAll",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Query() query: QueryVerificationsDto",
+      "body": "{\r\n    return this.verificationsService.findAll(query);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/admin/technician-verifications/:id",
+      "file": "Backend-FixHome/src/modules/technician-verifications/admin-technician-verifications.controller.ts",
+      "line": 59,
+      "handler": "findById",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    return this.verificationsService.findById(id);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/admin/technician-verifications/:id/documents/:documentId/access",
+      "file": "Backend-FixHome/src/modules/technician-verifications/admin-technician-verifications.controller.ts",
+      "line": 73,
+      "handler": "getDocumentAccess",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) verificationId: string; @Param('documentId', ParseUUIDPipe) documentId: string; @CurrentUser() user: { id: string; role: Role }",
+      "body": "{\r\n    return this.verificationsService.getSignedDocumentAccess(\r\n      documentId,\r\n      user,\r\n      verificationId,\r\n    );\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "PATCH",
+      "route": "/admin/technician-verifications/:id/approve",
+      "file": "Backend-FixHome/src/modules/technician-verifications/admin-technician-verifications.controller.ts",
+      "line": 100,
+      "handler": "approve",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @CurrentUser('id') reviewerId: string",
+      "body": "{\r\n    return this.verificationsService.approveVerification(id, reviewerId);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "PATCH",
+      "route": "/admin/technician-verifications/:id/reject",
+      "file": "Backend-FixHome/src/modules/technician-verifications/admin-technician-verifications.controller.ts",
+      "line": 118,
+      "handler": "reject",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @CurrentUser('id') reviewerId: string; @Body() dto: RejectVerificationDto",
+      "body": "{\r\n    return this.verificationsService.rejectVerification(id, reviewerId, dto);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "POST",
+      "route": "/technicians/me/verification",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 158,
+      "handler": "submit",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') technicianId: string; @Body() dto: SubmitVerificationDto",
+      "body": "{\r\n    return this.verificationsService.submitVerification(technicianId, dto);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/technicians/me/verification",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 178,
+      "handler": "getMyVerification",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') technicianId: string",
+      "body": "{\r\n    return this.verificationsService.getMyVerification(technicianId);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/technicians/me/verification/status",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 178,
+      "handler": "getMyVerification",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') technicianId: string",
+      "body": "{\r\n    return this.verificationsService.getMyVerification(technicianId);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/technicians/me/verification/documents/:documentId/access",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 192,
+      "handler": "getDocumentAccess",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Param('documentId', ParseUUIDPipe) documentId: string; @CurrentUser() user: { id: string; role: Role }",
+      "body": "{\r\n    return this.verificationsService.getSignedDocumentAccess(documentId, user);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "POST",
+      "route": "/technician/verification",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 158,
+      "handler": "submit",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') technicianId: string; @Body() dto: SubmitVerificationDto",
+      "body": "{\r\n    return this.verificationsService.submitVerification(technicianId, dto);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/technician/verification",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 178,
+      "handler": "getMyVerification",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') technicianId: string",
+      "body": "{\r\n    return this.verificationsService.getMyVerification(technicianId);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/technician/verification/status",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 178,
+      "handler": "getMyVerification",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') technicianId: string",
+      "body": "{\r\n    return this.verificationsService.getMyVerification(technicianId);\r\n  }"
+    },
+    {
+      "module": "technician-verifications",
+      "method": "GET",
+      "route": "/technician/verification/documents/:documentId/access",
+      "file": "Backend-FixHome/src/modules/technician-verifications/technician-verifications.controller.ts",
+      "line": 192,
+      "handler": "getDocumentAccess",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Param('documentId', ParseUUIDPipe) documentId: string; @CurrentUser() user: { id: string; role: Role }",
+      "body": "{\r\n    return this.verificationsService.getSignedDocumentAccess(documentId, user);\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "GET",
+      "route": "/technicians/me/profile",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 54,
+      "handler": "getMyProfile",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const profile = await this.techniciansService.getMyProfile(req.user.id);\r\n    return { data: profile };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "PATCH",
+      "route": "/technicians/me/profile",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 63,
+      "handler": "updateMyProfile",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }; @Body() dto: UpdateTechnicianProfileDto",
+      "body": "{\r\n    const profile = await this.techniciansService.updateMyProfile(req.user.id, dto);\r\n    return { data: profile };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "GET",
+      "route": "/technicians/me/services",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 75,
+      "handler": "getMyServices",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.TECHNICIAN, Role.TECHNICIAN",
+      "permissions": "'service:read'",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    return this.techniciansService.getMySkills(req.user.id);\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "PUT",
+      "route": "/technicians/me/services/:serviceId",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 96,
+      "handler": "setSkillPricing",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.TECHNICIAN, Role.TECHNICIAN",
+      "permissions": "'profile:update_own'",
+      "parameters": "@Req() req: { user: { id: string } }; @Param('serviceId', ParseUUIDPipe) serviceId: string; @Body() dto: UpdateSkillPricingDto",
+      "body": "{\r\n    return this.techniciansService.setSkillPricing(req.user.id, serviceId, dto);\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "GET",
+      "route": "/technicians/me/schedule",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 128,
+      "handler": "getMySchedule",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const schedule = await this.techniciansService.getMySchedule(req.user.id);\r\n    return { data: schedule };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "PUT",
+      "route": "/technicians/me/schedule",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 137,
+      "handler": "updateMySchedule",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }; @Body() body: { schedules: ScheduleItemDto[] }",
+      "body": "{\r\n    const schedule = await this.techniciansService.updateMySchedule(\r\n      req.user.id,\r\n      body.schedules || [],\r\n    );\r\n    return { data: schedule };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "GET",
+      "route": "/technicians/me/time-off",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 152,
+      "handler": "getMyTimeOff",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const timeOff = await this.techniciansService.getMyTimeOff(req.user.id);\r\n    return { data: timeOff };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "POST",
+      "route": "/technicians/me/time-off",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 161,
+      "handler": "createTimeOff",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }; @Body() dto: { startAt: string; endAt: string; reason?: string }",
+      "body": "{\r\n    const timeOff = await this.techniciansService.createTimeOff(req.user.id, dto);\r\n    return { data: timeOff };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "DELETE",
+      "route": "/technicians/me/time-off/:id",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 173,
+      "handler": "deleteTimeOff",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }; @Param('id') id: string",
+      "body": "{\r\n    const result = await this.techniciansService.deleteTimeOff(req.user.id, id);\r\n    return { data: result };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "GET",
+      "route": "/technicians/me/service-areas",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 185,
+      "handler": "getMyServiceAreas",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const areas = await this.techniciansService.getMyServiceAreas(req.user.id);\r\n    return { data: areas };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "PUT",
+      "route": "/technicians/me/service-areas",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 194,
+      "handler": "updateMyServiceAreas",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }; @Body() body: { areas: ServiceAreaItemDto[] }",
+      "body": "{\r\n    const areas = await this.techniciansService.updateMyServiceAreas(\r\n      req.user.id,\r\n      body.areas || [],\r\n    );\r\n    return { data: areas };\r\n  }"
+    },
+    {
+      "module": "technicians",
+      "method": "GET",
+      "route": "/technicians/me/earnings",
+      "file": "Backend-FixHome/src/modules/technicians/technicians.controller.ts",
+      "line": 209,
+      "handler": "getMyEarnings",
+      "guards": "JwtAuthGuard, RolesGuard, JwtAuthGuard",
+      "roles": "Role.TECHNICIAN",
+      "permissions": "",
+      "parameters": "@Req() req: { user: { id: string } }",
+      "body": "{\r\n    const earnings = await this.techniciansService.getMyEarnings(req.user.id);\r\n    return { data: earnings };\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/me/addresses",
+      "file": "Backend-FixHome/src/modules/users/addresses.controller.ts",
+      "line": 39,
+      "handler": "getAddresses",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.CUSTOMER",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string",
+      "body": "{\r\n    const addresses = await this.addressesService.findByUserId(userId);\r\n    return addresses.map(AddressResponseDto.fromEntity);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "POST",
+      "route": "/me/addresses",
+      "file": "Backend-FixHome/src/modules/users/addresses.controller.ts",
+      "line": 53,
+      "handler": "createAddress",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.CUSTOMER",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string; @Body() dto: CreateAddressDto",
+      "body": "{\r\n    const address = await this.addressesService.create(userId, dto);\r\n    return AddressResponseDto.fromEntity(address);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "PATCH",
+      "route": "/me/addresses/:id",
+      "file": "Backend-FixHome/src/modules/users/addresses.controller.ts",
+      "line": 68,
+      "handler": "updateAddress",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.CUSTOMER",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string; @Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateAddressDto",
+      "body": "{\r\n    const address = await this.addressesService.update(userId, id, dto);\r\n    return AddressResponseDto.fromEntity(address);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "DELETE",
+      "route": "/me/addresses/:id",
+      "file": "Backend-FixHome/src/modules/users/addresses.controller.ts",
+      "line": 84,
+      "handler": "deleteAddress",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.CUSTOMER",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string; @Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    await this.addressesService.remove(userId, id);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/admin/users",
+      "file": "Backend-FixHome/src/modules/users/admin-users.controller.ts",
+      "line": 33,
+      "handler": "findUsers",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Query() query: QueryUsersDto",
+      "body": "{\r\n    const { data, meta } = await this.usersService.findUsers(query);\r\n    return {\r\n      data: data.map((u) => UserProfileDto.fromUser(u)),\r\n      meta,\r\n    };\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/admin/users/:id",
+      "file": "Backend-FixHome/src/modules/users/admin-users.controller.ts",
+      "line": 47,
+      "handler": "getUserById",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    const user = await this.usersService.getUserById(id);\r\n    return UserProfileDto.fromUser(user);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "PATCH",
+      "route": "/admin/users/:id/status",
+      "file": "Backend-FixHome/src/modules/users/admin-users.controller.ts",
+      "line": 60,
+      "handler": "updateUserStatus",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateUserStatusDto; @CurrentUser() adminUser: any",
+      "body": "{\r\n    const user = await this.usersService.updateUserStatus(id, dto, {\r\n      id: adminUser.id,\r\n      role: adminUser.role,\r\n    });\r\n    return UserProfileDto.fromUser(user);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/me",
+      "file": "Backend-FixHome/src/modules/users/me.controller.ts",
+      "line": 26,
+      "handler": "getMyProfile",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string",
+      "body": "{\r\n    const user = await this.usersService.getProfile(userId);\r\n    const permissions = await this.rbacService.getPermissionsForRole(user.role);\r\n    return UserProfileDto.fromUser(user, permissions);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "PATCH",
+      "route": "/me",
+      "file": "Backend-FixHome/src/modules/users/me.controller.ts",
+      "line": 41,
+      "handler": "updateMyProfile",
+      "guards": "JwtAuthGuard, RolesGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string; @Body() dto: UpdateProfileDto",
+      "body": "{\r\n    const user = await this.usersService.updateProfile(userId, dto);\r\n    const permissions = await this.rbacService.getPermissionsForRole(user.role);\r\n    return UserProfileDto.fromUser(user, permissions);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/users/me",
+      "file": "Backend-FixHome/src/modules/users/users.controller.ts",
+      "line": 33,
+      "handler": "getMyProfile",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string",
+      "body": "{\r\n    const user = await this.usersService.getProfile(userId);\r\n    return UserProfileDto.fromUser(user);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "PATCH",
+      "route": "/users/me",
+      "file": "Backend-FixHome/src/modules/users/users.controller.ts",
+      "line": 45,
+      "handler": "updateMyProfile",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "",
+      "permissions": "",
+      "parameters": "@CurrentUser('id') userId: string; @Body() dto: UpdateProfileDto",
+      "body": "{\r\n    const user = await this.usersService.updateProfile(userId, dto);\r\n    return UserProfileDto.fromUser(user);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/users",
+      "file": "Backend-FixHome/src/modules/users/users.controller.ts",
+      "line": 66,
+      "handler": "findUsers",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'user:read_all'",
+      "parameters": "@Query() query: QueryUsersDto",
+      "body": "{\r\n    const { data, meta } = await this.usersService.findUsers(query);\r\n    return {\r\n      data: data.map((u) => UserProfileDto.fromUser(u)),\r\n      meta,\r\n    };\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "route": "/users/:id",
+      "file": "Backend-FixHome/src/modules/users/users.controller.ts",
+      "line": 82,
+      "handler": "getUserById",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.SERVICE_MANAGER, Role.ADMIN",
+      "permissions": "'user:read_all'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string",
+      "body": "{\r\n    const user = await this.usersService.getUserById(id);\r\n    return UserProfileDto.fromUser(user);\r\n  }"
+    },
+    {
+      "module": "users",
+      "method": "PATCH",
+      "route": "/users/:id/status",
+      "file": "Backend-FixHome/src/modules/users/users.controller.ts",
+      "line": 96,
+      "handler": "updateUserStatus",
+      "guards": "JwtAuthGuard, RolesGuard, PermissionGuard",
+      "roles": "Role.ADMIN",
+      "permissions": "'user:lock'",
+      "parameters": "@Param('id', ParseUUIDPipe) id: string; @Body() dto: UpdateUserStatusDto; @CurrentUser() currentUser: User",
+      "body": "{\r\n    const user = await this.usersService.updateUserStatus(id, dto, {\r\n      id: currentUser.id,\r\n      role: currentUser.role,\r\n    });\r\n    return UserProfileDto.fromUser(user);\r\n  }"
+    }
+  ],
+  "calls": [
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-audit-logs.api.ts",
+      "line": 136,
+      "method": "GET",
+      "route": "/admin/audit-logs",
+      "expression": "apiClient.get<unknown>('/admin/audit-logs', {\r\n      params: normalizeQuery(query),\r\n    })",
+      "matches": [
+        "GET /admin/audit-logs"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-audit-logs.api.ts",
+      "line": 153,
+      "method": "GET",
+      "route": "/admin/audit-logs/:param",
+      "expression": "apiClient.get<unknown>(\r\n      `/admin/audit-logs/${encodeURIComponent(assertId(id))}`,\r\n    )",
+      "matches": [
+        "GET /admin/audit-logs/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-config.api.ts",
+      "line": 71,
+      "method": "GET",
+      "route": "/admin/config",
+      "expression": "apiClient.get<unknown>('/admin/config', {\r\n      params: search ? { search } : undefined,\r\n    })",
+      "matches": [
+        "GET /admin/config"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-config.api.ts",
+      "line": 78,
+      "method": "GET",
+      "route": "/admin/config/:param",
+      "expression": "apiClient.get<unknown>(`/admin/config/${encodeURIComponent(key)}`)",
+      "matches": [
+        "GET /admin/config/:key"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-config.api.ts",
+      "line": 83,
+      "method": "PATCH",
+      "route": "/admin/config/:param",
+      "expression": "apiClient.patch<unknown>(\r\n      `/admin/config/${encodeURIComponent(key)}`,\r\n      { value },\r\n    )",
+      "matches": [
+        "PATCH /admin/config/:key"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-parts.api.ts",
+      "line": 114,
+      "method": "GET",
+      "route": "/admin/parts",
+      "expression": "apiClient.get<unknown>('/admin/parts', { params: query })",
+      "matches": [
+        "GET /admin/parts"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-parts.api.ts",
+      "line": 119,
+      "method": "GET",
+      "route": "/admin/parts/:param",
+      "expression": "apiClient.get<unknown>(`/admin/parts/${id}`)",
+      "matches": [
+        "GET /admin/parts/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-parts.api.ts",
+      "line": 124,
+      "method": "POST",
+      "route": "/admin/parts",
+      "expression": "apiClient.post<unknown>('/admin/parts', payload)",
+      "matches": [
+        "POST /admin/parts"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-parts.api.ts",
+      "line": 129,
+      "method": "PATCH",
+      "route": "/admin/parts/:param",
+      "expression": "apiClient.patch<unknown>(`/admin/parts/${id}`, payload)",
+      "matches": [
+        "PATCH /admin/parts/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-parts.api.ts",
+      "line": 134,
+      "method": "PATCH",
+      "route": "/admin/parts/:param/status",
+      "expression": "apiClient.patch<unknown>(`/admin/parts/${id}/status`, { isActive })",
+      "matches": [
+        "PATCH /admin/parts/:id/status"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-platform-dues.api.ts",
+      "line": 130,
+      "method": "GET",
+      "route": "/finance/platform-dues",
+      "expression": "apiClient.get<unknown>('/finance/platform-dues', {\r\n      params: normalizeQuery(query),\r\n    })",
+      "matches": [
+        "GET /finance/platform-dues"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-users.api.ts",
+      "line": 144,
+      "method": "GET",
+      "route": "/admin/users",
+      "expression": "apiClient.get<unknown>('/admin/users', { params: query })",
+      "matches": [
+        "GET /admin/users"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-users.api.ts",
+      "line": 149,
+      "method": "GET",
+      "route": "/admin/users/:param",
+      "expression": "apiClient.get<unknown>(`/admin/users/${id}`)",
+      "matches": [
+        "GET /admin/users/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-users.api.ts",
+      "line": 157,
+      "method": "PATCH",
+      "route": "/admin/users/:param/status",
+      "expression": "apiClient.patch<unknown>(`/admin/users/${id}/status`, payload)",
+      "matches": [
+        "PATCH /admin/users/:id/status"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-verifications.api.ts",
+      "line": 144,
+      "method": "GET",
+      "route": "/admin/technician-verifications",
+      "expression": "apiClient.get<unknown>('/admin/technician-verifications', { params })",
+      "matches": [
+        "GET /admin/technician-verifications"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-verifications.api.ts",
+      "line": 149,
+      "method": "GET",
+      "route": "/admin/technician-verifications/:param",
+      "expression": "apiClient.get<unknown>(`/admin/technician-verifications/${id}`)",
+      "matches": [
+        "GET /admin/technician-verifications/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-verifications.api.ts",
+      "line": 154,
+      "method": "PATCH",
+      "route": "/admin/technician-verifications/:param/approve",
+      "expression": "apiClient.patch<unknown>(\r\n      `/admin/technician-verifications/${id}/approve`,\r\n    )",
+      "matches": [
+        "PATCH /admin/technician-verifications/:id/approve"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/admin-verifications.api.ts",
+      "line": 161,
+      "method": "PATCH",
+      "route": "/admin/technician-verifications/:param/reject",
+      "expression": "apiClient.patch<unknown>(\r\n      `/admin/technician-verifications/${id}/reject`,\r\n      { rejectionReason },\r\n    )",
+      "matches": [
+        "PATCH /admin/technician-verifications/:id/reject"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/auth.api.ts",
+      "line": 11,
+      "method": "POST",
+      "route": "/auth/login",
+      "expression": "apiClient.post<ApiResponse<LoginResponse> | LoginResponse>('/auth/login', data)",
+      "matches": [
+        "POST /auth/login"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/auth.api.ts",
+      "line": 16,
+      "method": "POST",
+      "route": "/auth/register",
+      "expression": "apiClient.post<ApiResponse<LoginResponse> | LoginResponse>('/auth/register', data)",
+      "matches": [
+        "POST /auth/register"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/auth.api.ts",
+      "line": 21,
+      "method": "GET",
+      "route": "/me",
+      "expression": "apiClient.get<ApiResponse<UserInfo> | UserInfo>('/me')",
+      "matches": [
+        "GET /me"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/auth.api.ts",
+      "line": 26,
+      "method": "PATCH",
+      "route": "/me",
+      "expression": "apiClient.patch<ApiResponse<UserInfo> | UserInfo>('/me', data)",
+      "matches": [
+        "PATCH /me"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/auth.api.ts",
+      "line": 33,
+      "method": "POST",
+      "route": "/auth/logout",
+      "expression": "apiClient.post('/auth/logout', refreshToken ? { refreshToken } : {})",
+      "matches": [
+        "POST /auth/logout"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 83,
+      "method": "POST",
+      "route": "/bookings",
+      "expression": "apiClient.post<{ data: BookingItem }>('/bookings', {\n      ...dto,\n      urgency: ({ LOW: 'low', NORMAL: 'medium', HIGH: 'high', EMERGENCY: 'critical' })[dto.urgency],\n    })",
+      "matches": [
+        "POST /bookings"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 90,
+      "method": "GET",
+      "route": "/bookings/my",
+      "expression": "apiClient.get<{data: BookingItem[]}>('/bookings/my')",
+      "matches": [
+        "GET /bookings/my"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 92,
+      "method": "GET",
+      "route": "/bookings/:param",
+      "expression": "apiClient.get<{data: BookingItem}>(`/bookings/${id}`)",
+      "matches": [
+        "GET /bookings/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 118,
+      "method": "GET",
+      "route": "/bookings/:param/technician-candidates",
+      "expression": "apiClient.get<{data: TechnicianCandidate[]}>(`/bookings/${bookingId}/technician-candidates`)",
+      "matches": [
+        "GET /bookings/:id/technician-candidates"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 121,
+      "method": "POST",
+      "route": "/bookings/:param/shortlist",
+      "expression": "apiClient.post(`/bookings/${bookingId}/shortlist`, { technicianIds })",
+      "matches": [
+        "POST /bookings/:id/shortlist"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 124,
+      "method": "GET",
+      "route": "/invitations/my",
+      "expression": "apiClient.get<{data: InvitationItem[]}>('/invitations/my')",
+      "matches": [
+        "GET /invitations/my"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/bookings.api.ts",
+      "line": 127,
+      "method": "POST",
+      "route": "/invitations/:param/respond",
+      "expression": "apiClient.post(`/invitations/${invitationId}/respond`, { action })",
+      "matches": [
+        "POST /invitations/:id/respond"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 123,
+      "method": "GET",
+      "route": "/categories",
+      "expression": "apiClient.get<unknown>('/categories')",
+      "matches": [
+        "GET /categories"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 129,
+      "method": "GET",
+      "route": "/categories/:param",
+      "expression": "apiClient.get<unknown>(`/categories/${idOrSlug}`)",
+      "matches": [
+        "GET /categories/:idOrSlug"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 135,
+      "method": "GET",
+      "route": "/admin/categories",
+      "expression": "apiClient.get<unknown>('/admin/categories')",
+      "matches": [
+        "GET /admin/categories"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 140,
+      "method": "POST",
+      "route": "/admin/categories",
+      "expression": "apiClient.post<unknown>('/admin/categories', writablePayload(dto, [...writableCategory, 'code']))",
+      "matches": [
+        "POST /admin/categories"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 145,
+      "method": "PATCH",
+      "route": "/admin/categories/:param",
+      "expression": "apiClient.patch<unknown>(`/admin/categories/${id}`, writablePayload(dto, writableCategory))",
+      "matches": [
+        "PATCH /admin/categories/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 150,
+      "method": "PATCH",
+      "route": "/admin/categories/:param/status",
+      "expression": "apiClient.patch<unknown>(`/admin/categories/${id}/status`, { isActive })",
+      "matches": [
+        "PATCH /admin/categories/:id/status"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 161,
+      "method": "GET",
+      "route": "/services",
+      "expression": "apiClient.get<unknown>('/services', { params })",
+      "matches": [
+        "GET /services"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 166,
+      "method": "GET",
+      "route": "/services/:param",
+      "expression": "apiClient.get<unknown>(`/services/${idOrSlug}`)",
+      "matches": [
+        "GET /services/:idOrSlug"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 178,
+      "method": "GET",
+      "route": "/admin/services",
+      "expression": "apiClient.get<unknown>('/admin/services', { params })",
+      "matches": [
+        "GET /admin/services"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 183,
+      "method": "POST",
+      "route": "/admin/services",
+      "expression": "apiClient.post<unknown>('/admin/services', writablePayload(dto, [...writableService, 'code']))",
+      "matches": [
+        "POST /admin/services"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 188,
+      "method": "PATCH",
+      "route": "/admin/services/:param",
+      "expression": "apiClient.patch<unknown>(`/admin/services/${id}`, writablePayload(dto, writableService))",
+      "matches": [
+        "PATCH /admin/services/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 193,
+      "method": "PATCH",
+      "route": "/admin/services/:param/status",
+      "expression": "apiClient.patch<unknown>(`/admin/services/${id}/status`, { isActive })",
+      "matches": [
+        "PATCH /admin/services/:id/status"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/console-order-context.api.ts",
+      "line": 152,
+      "method": "GET",
+      "route": "/service-orders/:param",
+      "expression": "apiClient.get<unknown>(`/service-orders/${encodeURIComponent(id)}`)",
+      "matches": [
+        "GET /service-orders/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 122,
+      "method": "GET",
+      "route": "/service-orders/my",
+      "expression": "apiClient.get<{data: ServiceOrderItem[]}>('/service-orders/my')",
+      "matches": [
+        "GET /service-orders/my"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 122,
+      "method": "GET",
+      "route": "/service-orders/my",
+      "expression": "apiClient.get<{data: ServiceOrderItem[]}>('/service-orders/my')",
+      "matches": [
+        "GET /service-orders/my"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 126,
+      "method": "GET",
+      "route": "/service-orders",
+      "expression": "apiClient.get<{data: ServiceOrderItem[]}>('/service-orders', {params:{status:statusFilter?.toLowerCase() || undefined}})",
+      "matches": [
+        "GET /service-orders"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 128,
+      "method": "GET",
+      "route": "/service-orders/:param",
+      "expression": "apiClient.get<{data: ServiceOrderItem}>(`/service-orders/${id}`)",
+      "matches": [
+        "GET /service-orders/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 133,
+      "method": "POST",
+      "route": "/service-orders/:param/en-route",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/service-orders/${orderId}/en-route`)",
+      "matches": [
+        "POST /service-orders/:id/en-route"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 141,
+      "method": "POST",
+      "route": "/service-orders/:param/check-in",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/service-orders/${orderId}/check-in`, {\r\n      lat: coords.lat,\r\n      lng: coords.lng,\r\n      accuracyMeters: coords.accuracyMeters ?? 20,\r\n    })",
+      "matches": [
+        "POST /service-orders/:id/check-in"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 149,
+      "method": "POST",
+      "route": "/service-orders/:param/start-repair",
+      "expression": "apiClient.post<{data: Record<string,unknown>}>(`/service-orders/${orderId}/start-repair`)",
+      "matches": [
+        "POST /service-orders/:id/start-repair"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 159,
+      "method": "POST",
+      "route": "/service-orders/:param/evidence",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/service-orders/${orderId}/evidence`, form, { headers: { 'Content-Type': 'multipart/form-data' } })",
+      "matches": [
+        "POST /service-orders/:id/evidence"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 167,
+      "method": "POST",
+      "route": "/service-orders/:param/request-completion",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/service-orders/${orderId}/request-completion`, body || {})",
+      "matches": [
+        "POST /service-orders/:id/request-completion"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 172,
+      "method": "POST",
+      "route": "/service-orders/:param/confirm-completion",
+      "expression": "apiClient.post<{data: {order: ServiceOrderItem}}>(`/service-orders/${orderId}/confirm-completion`, {})",
+      "matches": [
+        "POST /service-orders/:id/confirm-completion"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 177,
+      "method": "POST",
+      "route": "/service-orders/:param/cancel",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/service-orders/${orderId}/cancel`, { reason })",
+      "matches": [
+        "POST /service-orders/:id/cancel"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 183,
+      "method": "POST",
+      "route": "/service-orders/:param/quotations",
+      "expression": "apiClient.post<{data: Record<string,unknown>}>(`/service-orders/${orderId}/quotations`, {items: items.map(item => ({...item, type: item.type === 'LABOR' ? 'labor' : 'parts_equipment'}))})",
+      "matches": [
+        "POST /service-orders/:id/quotations"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 185,
+      "method": "POST",
+      "route": "/quotations/:param/decision",
+      "expression": "apiClient.post<{data: Record<string,unknown>}>(`/quotations/${quotationId}/decision`, {action:'APPROVE'})",
+      "matches": [
+        "POST /quotations/:id/decision"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 187,
+      "method": "POST",
+      "route": "/quotations/:param/decision",
+      "expression": "apiClient.post<{data: Record<string,unknown>}>(`/quotations/${quotationId}/decision`, {action:'REJECT'})",
+      "matches": [
+        "POST /quotations/:id/decision"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 195,
+      "method": "POST",
+      "route": "/service-orders/:param/cash-settlement/declare",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(\r\n      `/service-orders/${orderId}/cash-settlement/declare`,\r\n      body,\r\n    )",
+      "matches": [
+        "POST /service-orders/:id/cash-settlement/declare"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 206,
+      "method": "POST",
+      "route": "/service-orders/:param/cash-settlement/confirm",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(\r\n      `/service-orders/${orderId}/cash-settlement/confirm`,\r\n      body,\r\n    )",
+      "matches": [
+        "POST /service-orders/:id/cash-settlement/confirm"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 213,
+      "method": "GET",
+      "route": "/service-orders/:param/cash-settlement",
+      "expression": "apiClient.get<{data: Record<string,unknown> | null}>(`/service-orders/${orderId}/cash-settlement`)",
+      "matches": [
+        "GET /service-orders/:id/cash-settlement"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 217,
+      "method": "GET",
+      "route": "/service-orders/:param/invoice",
+      "expression": "apiClient.get<{data: Record<string,unknown>}>(`/service-orders/${orderId}/invoice`)",
+      "matches": [
+        "GET /service-orders/:id/invoice"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 220,
+      "method": "POST",
+      "route": "/invoices/:param/pay",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/invoices/${invoiceId}/pay`, { idempotencyKey: crypto.randomUUID() })",
+      "matches": [
+        "POST /invoices/:id/pay"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 227,
+      "method": "GET",
+      "route": "/service-orders/:param/warranties",
+      "expression": "apiClient.get<{data: {id:string;startsAt:string;expiresAt:string;status:string;note?:string}[]}>(`/service-orders/${order.id}/warranties`)",
+      "matches": [
+        "GET /service-orders/:id/warranties"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/orders.api.ts",
+      "line": 233,
+      "method": "POST",
+      "route": "/service-orders/:param/warranty-claims",
+      "expression": "apiClient.post<ApiResponse<Record<string, unknown>>>(`/service-orders/${orderId}/warranty-claims`, {\r\n      description,\r\n    })",
+      "matches": [
+        "POST /service-orders/:id/warranty-claims"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/profile.api.ts",
+      "line": 33,
+      "method": "GET",
+      "route": "/me",
+      "expression": "apiClient.get<{ data: UserProfile }>('/me')",
+      "matches": [
+        "GET /me"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/profile.api.ts",
+      "line": 42,
+      "method": "PATCH",
+      "route": "/me",
+      "expression": "apiClient.patch<{ data: UserProfile }>('/me', dto)",
+      "matches": [
+        "PATCH /me"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/profile.api.ts",
+      "line": 47,
+      "method": "GET",
+      "route": "/me/addresses",
+      "expression": "apiClient.get<{ data: UserAddress[] }>('/me/addresses')",
+      "matches": [
+        "GET /me/addresses"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/profile.api.ts",
+      "line": 61,
+      "method": "POST",
+      "route": "/me/addresses",
+      "expression": "apiClient.post<{ data: UserAddress }>('/me/addresses', dto)",
+      "matches": [
+        "POST /me/addresses"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/profile.api.ts",
+      "line": 76,
+      "method": "PATCH",
+      "route": "/me/addresses/:param",
+      "expression": "apiClient.patch<{ data: UserAddress }>(`/me/addresses/${id}`, dto)",
+      "matches": [
+        "PATCH /me/addresses/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/profile.api.ts",
+      "line": 81,
+      "method": "DELETE",
+      "route": "/me/addresses/:param",
+      "expression": "apiClient.delete(`/me/addresses/${id}`)",
+      "matches": [
+        "DELETE /me/addresses/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/service-areas.api.ts",
+      "line": 20,
+      "method": "GET",
+      "route": "/service-areas",
+      "expression": "apiClient.get<ServiceArea[]>('/service-areas', { params })",
+      "matches": [
+        "GET /service-areas"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/service-areas.api.ts",
+      "line": 25,
+      "method": "GET",
+      "route": "/service-areas/:param",
+      "expression": "apiClient.get<ServiceArea>(`/service-areas/${id}`)",
+      "matches": [
+        "GET /service-areas/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/service-areas.api.ts",
+      "line": 36,
+      "method": "POST",
+      "route": "/service-areas",
+      "expression": "apiClient.post<ServiceArea>('/service-areas', dto)",
+      "matches": [
+        "POST /service-areas"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/service-areas.api.ts",
+      "line": 50,
+      "method": "PATCH",
+      "route": "/service-areas/:param",
+      "expression": "apiClient.patch<ServiceArea>(`/service-areas/${id}`, dto)",
+      "matches": [
+        "PATCH /service-areas/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/service-areas.api.ts",
+      "line": 55,
+      "method": "PATCH",
+      "route": "/service-areas/:param/status",
+      "expression": "apiClient.patch<ServiceArea>(`/service-areas/${id}/status`, { isActive })",
+      "matches": [
+        "PATCH /service-areas/:id/status"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/service-areas.api.ts",
+      "line": 60,
+      "method": "DELETE",
+      "route": "/service-areas/:param",
+      "expression": "apiClient.delete(`/service-areas/${id}`)",
+      "matches": [
+        "DELETE /service-areas/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/support-cases.api.ts",
+      "line": 375,
+      "method": "GET",
+      "route": "/support/cases",
+      "expression": "apiClient.get<unknown>('/support/cases', { params: normalizeQuery(query) })",
+      "matches": [
+        "GET /support/cases"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/support-cases.api.ts",
+      "line": 387,
+      "method": "GET",
+      "route": "/support/cases/:param",
+      "expression": "apiClient.get<unknown>(`/support/cases/${encodeURIComponent(assertId(id))}`)",
+      "matches": [
+        "GET /support/cases/:id"
+      ]
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/support-cases.api.ts",
+      "line": 394,
+      "method": "POST",
+      "route": "/support/cases/:param/resolve",
+      "expression": "apiClient.post<unknown>(\r\n      `/support/cases/${encodeURIComponent(assertId(id))}/resolve`,\r\n      payload,\r\n    )",
+      "matches": [
+        "POST /support/cases/:id/resolve"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/auth.api.ts",
+      "line": 40,
+      "method": "POST",
+      "route": "/auth/login",
+      "expression": "apiClient.post<{ data: AuthResponse } | AuthResponse>(\r\n      '/auth/login',\r\n      { identifier: data.email.trim(), password: data.password },\n    )",
+      "matches": [
+        "POST /auth/login"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/auth.api.ts",
+      "line": 52,
+      "method": "POST",
+      "route": "/auth/register",
+      "expression": "apiClient.post<{ data: AuthResponse } | AuthResponse>(\r\n      '/auth/register',\r\n      data,\r\n    )",
+      "matches": [
+        "POST /auth/register"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/auth.api.ts",
+      "line": 63,
+      "method": "GET",
+      "route": "/me",
+      "expression": "apiClient.get<{ data: UserInfo } | UserInfo>('/me')",
+      "matches": [
+        "GET /me"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/auth.api.ts",
+      "line": 70,
+      "method": "POST",
+      "route": "/auth/refresh",
+      "expression": "apiClient.post<\r\n      { data: RefreshResponse } | RefreshResponse\r\n    >('/auth/refresh', { refreshToken })",
+      "matches": [
+        "POST /auth/refresh"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/auth.api.ts",
+      "line": 82,
+      "method": "POST",
+      "route": "/auth/logout",
+      "expression": "apiClient.post('/auth/logout', { refreshToken })",
+      "matches": [
+        "POST /auth/logout"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 118,
+      "method": "POST",
+      "route": "/bookings",
+      "expression": "apiClient.post('/bookings', body)",
+      "matches": [
+        "POST /bookings"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 123,
+      "method": "GET",
+      "route": "/bookings/my",
+      "expression": "apiClient.get('/bookings/my')",
+      "matches": [
+        "GET /bookings/my"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 128,
+      "method": "GET",
+      "route": "/bookings/:param",
+      "expression": "apiClient.get(`/bookings/${id}`)",
+      "matches": [
+        "GET /bookings/:id"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 144,
+      "method": "GET",
+      "route": "/bookings/:param/technician-candidates",
+      "expression": "apiClient.get(\r\n      `/bookings/${bookingId}/technician-candidates`,\r\n    )",
+      "matches": [
+        "GET /bookings/:id/technician-candidates"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 159,
+      "method": "POST",
+      "route": "/bookings/:param/shortlist",
+      "expression": "apiClient.post(`/bookings/${bookingId}/shortlist`, { technicianIds })",
+      "matches": [
+        "POST /bookings/:id/shortlist"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 163,
+      "method": "GET",
+      "route": "/invitations/my",
+      "expression": "apiClient.get('/invitations/my')",
+      "matches": [
+        "GET /invitations/my"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 178,
+      "method": "POST",
+      "route": "/invitations/:param/respond",
+      "expression": "apiClient.post(`/invitations/${id}/respond`, { action })",
+      "matches": [
+        "POST /invitations/:id/respond"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 183,
+      "method": "POST",
+      "route": "/bookings/:param/cancel",
+      "expression": "apiClient.post(`/bookings/${id}/cancel`, { reason })",
+      "matches": [
+        "POST /bookings/:id/cancel"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 191,
+      "method": "PATCH",
+      "route": "/bookings/:param/schedule",
+      "expression": "apiClient.patch(`/bookings/${id}/schedule`, {\r\n      preferredStartAt,\r\n      preferredEndAt,\r\n    })",
+      "matches": [
+        "PATCH /bookings/:id/schedule"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/bookings.api.ts",
+      "line": 202,
+      "method": "POST",
+      "route": "/bookings/:param/media",
+      "expression": "apiClient.post(`/bookings/${bookingId}/media`, { url, mimeType })",
+      "matches": [
+        "POST /bookings/:id/media"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/services.api.ts",
+      "line": 39,
+      "method": "GET",
+      "route": "/categories",
+      "expression": "apiClient.get('/categories')",
+      "matches": [
+        "GET /categories"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/services.api.ts",
+      "line": 49,
+      "method": "GET",
+      "route": "/services",
+      "expression": "apiClient.get('/services', { params })",
+      "matches": [
+        "GET /services"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/services.api.ts",
+      "line": 55,
+      "method": "GET",
+      "route": "/services/:param",
+      "expression": "apiClient.get(`/services/${id}`)",
+      "matches": [
+        "GET /services/:idOrSlug"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/users.api.ts",
+      "line": 46,
+      "method": "GET",
+      "route": "/users/me",
+      "expression": "apiClient.get<{ data: UserInfo } | UserInfo>('/users/me')",
+      "matches": [
+        "GET /users/me"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/users.api.ts",
+      "line": 51,
+      "method": "PATCH",
+      "route": "/users/me",
+      "expression": "apiClient.patch<{ data: UserInfo } | UserInfo>('/users/me', data)",
+      "matches": [
+        "PATCH /users/me"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/users.api.ts",
+      "line": 56,
+      "method": "GET",
+      "route": "/me/addresses",
+      "expression": "apiClient.get<{ data: AddressData[] } | AddressData[]>('/me/addresses')",
+      "matches": [
+        "GET /me/addresses"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/users.api.ts",
+      "line": 62,
+      "method": "POST",
+      "route": "/me/addresses",
+      "expression": "apiClient.post<{ data: AddressData } | AddressData>('/me/addresses', data)",
+      "matches": [
+        "POST /me/addresses"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/users.api.ts",
+      "line": 67,
+      "method": "PATCH",
+      "route": "/me/addresses/:param",
+      "expression": "apiClient.patch<{ data: AddressData } | AddressData>(`/me/addresses/${id}`, data)",
+      "matches": [
+        "PATCH /me/addresses/:id"
+      ]
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/api/users.api.ts",
+      "line": 72,
+      "method": "DELETE",
+      "route": "/me/addresses/:param",
+      "expression": "apiClient.delete(`/me/addresses/${id}`)",
+      "matches": [
+        "DELETE /me/addresses/:id"
+      ]
+    }
+  ],
+  "hits": [
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/config/env.validation.ts",
+      "line": 36,
+      "text": "DATABASE_HOST: string = 'localhost';"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/config/env.validation.ts",
+      "line": 87,
+      "text": "AI_SERVICE_URL: string = 'http://localhost:8000';"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/config/env.validation.ts",
+      "line": 130,
+      "text": "CORS_ORIGIN: string = 'http://localhost:5173,http://localhost:8081';"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/database/data-source.ts",
+      "line": 25,
+      "text": "host: process.env.DATABASE_HOST || 'localhost',"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/database/database.module.ts",
+      "line": 12,
+      "text": "host: configService.get<string>('DATABASE_HOST', 'localhost'),"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/modules/health/health.service.ts",
+      "line": 10,
+      "text": "let timer: ReturnType<typeof setTimeout> | undefined;"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/modules/health/health.service.ts",
+      "line": 16,
+      "text": "timer = setTimeout(() => reject(new Error('Health timeout')), 5000);"
+    },
+    {
+      "repo": "Backend-FixHome",
+      "file": "Backend-FixHome/src/setup-app.ts",
+      "line": 22,
+      "text": ": ['http://localhost:5173', 'http://localhost:8081'];"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/catalog.api.ts",
+      "line": 53,
+      "text": "// Local to this adapter: the shared Axios client is unchanged and no mock"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/client.ts",
+      "line": 4,
+      "text": "const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/api/console-order-context.api.ts",
+      "line": 5,
+      "text": "// and malformed responses throw and never fall back to local/mock order data."
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/layouts/AdminLayout.vue",
+      "line": 19,
+      "text": "<!-- TODO: Add navigation links as features are implemented -->"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/console/ConsoleOrderDetailPage.vue",
+      "line": 45,
+      "text": "// This page never falls back to local or mock order data."
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/customer/BookingCandidatesPage.vue",
+      "line": 61,
+      "text": "setTimeout(() => {"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/customer/CustomerProfilePage.vue",
+      "line": 88,
+      "text": "setTimeout(() => {"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/dashboard/DashboardPage.vue",
+      "line": 9,
+      "text": "<!-- TODO: Implement dashboard with statistics and overview -->"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/dashboard/DashboardPage.vue",
+      "line": 17,
+      "text": "// TODO: Fetch dashboard data"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/ServiceDetailPage.vue",
+      "line": 15,
+      "text": "// Fallback mock if backend is unavailable"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/ServiceDetailPage.vue",
+      "line": 17,
+      "text": "id: 'mock-1',"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 18,
+      "text": "const mockFoundOrder = ref<{"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 30,
+      "text": "setTimeout(() => {"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 33,
+      "text": "mockFoundOrder.value = {"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 128,
+      "text": "<div v-if=\"searched && mockFoundOrder\" class=\"space-y-6\">"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 132,
+      "text": "<span class=\"text-xs font-num font-bold text-ink-500\">{{ mockFoundOrder.code }}</span>"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 133,
+      "text": "<h3 class=\"text-lg font-bold text-ink-900\">{{ mockFoundOrder.service }}</h3>"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 134,
+      "text": "<p class=\"text-xs text-ink-500\">Thợ phụ trách: {{ mockFoundOrder.technician }}</p>"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 136,
+      "text": "<FhStatusPill :status=\"mockFoundOrder.status\" />"
+    },
+    {
+      "repo": "Frontend-FixHome",
+      "file": "Frontend-FixHome/src/pages/public/TrackOrderPage.vue",
+      "line": 142,
+      "text": "<FhTimeline :steps=\"mockFoundOrder.steps\" />"
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/constants/config.ts",
+      "line": 5,
+      "text": "API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || (Platform.OS === 'android' ? 'http://10.0.2.2:3000/api/v1' : 'http://localhost:3000/api/v1'),"
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/screens/customer/CustomerMatchingScreen.tsx",
+      "line": 71,
+      "text": "// Mock finding technician after 3 seconds"
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/screens/customer/CustomerMatchingScreen.tsx",
+      "line": 72,
+      "text": "const timer = setTimeout(() => {"
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/screens/customer/CustomerMatchingScreen.tsx",
+      "line": 87,
+      "text": "{/* Fake Map */}"
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/screens/customer/CustomerProfileScreen.tsx",
+      "line": 188,
+      "text": "setTimeout(() => {"
+    },
+    {
+      "repo": "Mobi-FixHome",
+      "file": "Mobi-FixHome/src/screens/technician/TechnicianProfileScreen.tsx",
+      "line": 58,
+      "text": "setTimeout(() => {"
+    }
+  ]
+}
