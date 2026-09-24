@@ -20,7 +20,7 @@
 - [Full API Integration Report](docs/FULL-API-INTEGRATION-REPORT.md) — Báo cáo kiểm định tích hợp API toàn diện giữa Web, Mobile và Backend
 - [Final Integration Checklist](docs/FINAL-INTEGRATION-CHECKLIST.md) — Checklist chốt chặn kiểm thử trước demo
 - [API v1.4 Changelog](docs/API_V1_4_CHANGELOG.md) — Hợp đồng API v1.4 (Reschedule, Withdraw, Cash Dual-Confirmation, Notifications, Parts...)
-- [Database v1.4 Migrations](docs/DATABASE_V1_4_MIGRATION_PLAN.md) — Kế hoạch & cấu trúc migration TypeORM trong PostgreSQL
+- [Database Migrations](database/CORE_SCHEMA_MIGRATIONS.md) — Quy chuẩn database, danh sách toàn bộ 32 migrations TypeORM trong PostgreSQL
 - [CURRENT_TASKS.md](CURRENT_TASKS.md) — Trạng thái dự án, danh sách task hoàn thành và backlog
 - [REPOSITORY_GUIDE.md](REPOSITORY_GUIDE.md) — Bản đồ repo và hướng dẫn setup local
 - [AGENTS.md](AGENTS.md) — Hướng dẫn cho AI coding agents
