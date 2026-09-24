@@ -191,3 +191,22 @@
 - **Method & Path**: `GET /service-orders/:id/timeline`
 - **Roles**: All authenticated roles
 - **Description**: Lấy toàn bộ dòng thời gian thực từ bảng `order_status_history` của cơ sở dữ liệu.
+
+### 3.9 Delete Repair Evidence (Xóa ảnh bằng chứng)
+- **Method & Path**: `DELETE /service-orders/:id/evidence/:evidenceId`
+- **Roles**: `technician`
+- **Description**: Xóa ảnh bằng chứng hư hại hoặc ảnh sau sửa chữa tải nhầm; đồng thời xóa file vật lý trên Cloudinary.
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "Xóa ảnh bằng chứng thành công"
+  }
+  ```
+
+### 3.10 Public Order Tracking (Tra cứu tiến độ đơn không cần đăng nhập)
+- **Method & Path**: `GET /orders/track?code=:orderCode&phone=:customerPhone`
+- **Roles**: Public (Không cần JWT)
+- **Description**: Cho phép tra cứu tiến độ đơn hàng và vị trí GPS của thợ di chuyển theo thời gian thực dựa trên mã đơn và số điện thoại khách hàng.
+

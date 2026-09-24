@@ -60,7 +60,7 @@ flowchart TB
 
     subgraph DataStorage["Lớp Dữ Liệu & Lưu Trữ"]
         Postgres[(PostgreSQL 16 Database<br/>TypeORM, Migrations, Seeds)]
-        Storage["Private Supabase / S3 Object Storage<br/>(KYC Documents, Evidence Before/After)"]
+        Storage["Cloudinary Authenticated Private Storage<br/>(KYC Documents, Evidence Before/After, 5-min Signed URLs)"]
     end
 
     CustomerWeb --> HTTP_REST
@@ -233,13 +233,22 @@ Backend-FixHome/src/
 │   │       ├── quotation-item.entity.ts         # Từng hạng mục công hoặc linh kiện FixHome/thợ
 │   │       └── additional-cost-request.entity.ts# Yêu cầu phát sinh kèm ảnh chụp bằng chứng
 │   │
-│   ├── finance/                      # Tài chính, Thu hộ & Công nợ nền tảng
-│   │   ├── finance.controller.ts     # Khai báo thu tiền mặt, khách xác nhận, đối soát nợ thợ
-│   │   ├── finance.service.ts        # Chốt chặn Cash Dual-Confirmation, tính phí hoa hồng
+│   ├── finance/                      # Tài chính, Cổng VNPay & Công nợ nền tảng
+│   │   ├── finance.controller.ts     # Platform dues list & finance admin
+│   │   ├── finance.service.ts        # Chốt chặn Cash Dual-Confirmation & VNPay reconciliation
+│   │   ├── vnpay/
+│   │   │   ├── vnpay.controller.ts   # VNPay IPN webhook & return URL callback
+│   │   │   └── vnpay.util.ts         # Sinh URL thanh toán & kiểm tra chữ ký HMAC-SHA512
 │   │   └── entities/
 │   │       ├── invoice.entity.ts                # Hóa đơn thanh toán hoàn tất
 │   │       ├── commission-due.entity.ts         # Khoản nợ hoa hồng thợ phải hoàn trả FixHome
 │   │       └── payment-attempt.entity.ts        # Ghi nhận lần giao dịch thanh toán
+│   │
+│   ├── media/                        # Lưu trữ Cloudinary riêng tư & cấp URL chữ ký
+│   │   ├── media.controller.ts       # Upload ảnh đặt lịch, upload media công khai
+│   │   ├── media.service.ts          # Lưu trữ tệp tin trên Cloudinary
+│   │   ├── order-evidence-storage.service.ts       # Quản lý ảnh bằng chứng sửa chữa với signed URLs & xóa ảnh
+│   │   └── private-booking-photo-storage.service.ts# Quản lý ảnh đặt lịch riêng tư
 │   │
 │   ├── reviews/                      # Đánh giá & Phản hồi sau dịch vụ
 │   │   ├── reviews.controller.ts     # POST /reviews (1 lần/đơn), Admin kiểm duyệt

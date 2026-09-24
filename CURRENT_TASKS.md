@@ -1,23 +1,21 @@
 # FixHome — Current Tasks
 
-> Last updated: 2026-09-16 | Phase: Dev 1 Implementation & Audit Complete (Master Spec v1.4)
+> Last updated: 2026-09-24 | Phase: Cloudinary Storage Migration, VNPay Integration, Public Tracking & Realtime Chat (Master Spec v2.1)
 
 ---
 
 ## Current Phase
 
-**Dev 1 Implementation, Security Audit & Core Flow Finalization Complete** — Aligned with **Master Project Specification v1.4** and **DEV1-FIX-REPORT.md**.
-All 24 audit tasks have been successfully implemented and tested:
-- **Payment Security**: Closed client `PAID` spoofing vulnerability; standardized on **Cash Dual-Confirmation** and Service Manager reconciliation.
-- **Chat Scope Cleanup**: Confirmed Chat is **OUT OF DEV 1 SCOPE**; cleanly dropped `chat_messages` and `conversations` tables via migration `1725901000000-DropDev1ChatTables.ts` for clean handover to dedicated developer.
-- **Customer Reschedule Flow**: Full UX modal and backend logic (`POST /bookings/:id/reschedule`) before repair start.
-- **Technician Withdrawal**: Order return flow (`POST /service-orders/:id/withdraw`) before arrival, auto-retriggering sequential invitation.
-- **State Machine D-22**: Strict enforcement (`ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED`), GPS geofence arrival check-in, repair evidence gating (`BEFORE` / `AFTER`), and cancellation prevention during active repair.
-- **Zero Mock Data**: 100% real API integration across all Customer and Technician web pages.
-- **Real Timeline**: Dynamic order progress synchronized with `OrderStatusHistory`.
-- **Notifications Module**: Full in-app notification system (unread count, mark read, notification center).
-- **Mobile Navigation**: Bottom Navigation Bar for both Customer and Technician on mobile viewports.
-- **Quality Gates**: 129 backend unit tests (20 suites) and 14 web unit tests (3 suites) passing, 0 lint warnings/errors, 0 typecheck errors, successful production builds.
+**Feature Expansion, Storage Migration & Ecosystem Hardening Complete** — Aligned with **Master Project Specification v2.1**.
+Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
+- **Cloudinary Authenticated Private Storage**: Migrated order evidence and private booking photo storage from Supabase to Cloudinary authenticated storage with time-limited signed URLs (`expires_at`, 5 minutes expiration) and magic-byte MIME validation.
+- **VNPay Payment Gateway Integration**: Added redirect payment URL generation (`POST /invoices/:id/vnpay-url`), cryptographic signature verification (HMAC-SHA512), IPN webhook and return URL auto-reconciliation, with automatic invoice and order completion.
+- **Public Order Tracking**: Public tracking endpoint (`GET /orders/track?code=...&phone=...`) allowing customers to track order progress and technician live location on a real-time map without login.
+- **Technician Service Radius**: Technicians can configure operating radius (`service_radius_km`) from their base address, enforced in candidate discovery and invitation matching.
+- **Evidence Deletion**: Added repair evidence deletion (`DELETE /service-orders/:id/evidence/:evidenceId`) with Cloudinary object deletion.
+- **Real-time Chat Gateway**: WebSocket Socket.IO messaging gateway between Customer and Technician with mobile thread synchronization, handshake resilience, and auto-reconnect.
+- **Mobile Auth & KYC Hardening**: Split registration OTP and password reset flows, added photo reset button, and fixed iOS multi-part binary upload via `XMLHttpRequest`.
+- **Quality Gates**: **603 backend unit tests (77 suites)** and **323 web tests (37 suites)** passing (100% green), 0 lint errors, 0 typecheck errors, successful production builds.
 
 ---
 
@@ -25,14 +23,16 @@ All 24 audit tasks have been successfully implemented and tested:
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Backend | ✅ Lint (0 w/e), TypeCheck, Build, 129 unit tests pass | Aligned with Spec v1.4; 20 test suites passing |
-| Web | ✅ Lint, TypeCheck, 14 unit tests, Vite Build pass | 32+ functional pages, Warm Orange Design System, Mobile bottom nav, Zero mock data |
-| Mobile | ✅ Clean & Stable | Quality gate fixes, liquid custom tab bar |
-| AI Service | ✅ Adapter API & Advisory Stub | FastAPI service configured with CI quality gates |
-| Database | ✅ 14 Migrations Executed | All migrations executed up to `1725901000000-DropDev1ChatTables.ts` |
-| Testing | ✅ Comprehensive | 129 backend tests + 14 web tests passing |
-| Documentation | ✅ Up-to-date (v1.4) | Master Spec v1.4, Dev1 Plan v1.4, Dev1 Fix Report, API v1.4 Changelog synced |
-| CI / DevOps | ✅ Docker & independent CI | Dockerfile + CI workflows |
+| Backend | ✅ 603/603 unit tests pass (77 suites) | 0 lint w/e, 0 typecheck errors, Cloudinary private storage, VNPay integration |
+| Web | ✅ 323/323 unit tests pass (37 suites) | 32+ pages, public tracking live map, VNPay return polling, radius picker |
+| Mobile | ✅ Clean & Stable | Expo SDK 57, Realtime Chat Socket thread, separate auth OTP/reset screens |
+| AI Service | ✅ Adapter API & Advisory Stub | FastAPI service, CI pipeline (pytest, flake8, mypy), YOLO11s + RAG + Qwen2.5-VL |
+| Database | ✅ 32 Migrations Executed | PostgreSQL 16, deduplication & unique constraints, service radius |
+| Storage | ✅ Cloudinary Private Authenticated | Signed access URLs (5-minute expiration), JPEG/PNG/WebP magic-byte validation |
+| Payments | ✅ VNPay + Cash Dual-Confirmation | Automated VNPay reconciliation + server-authoritative cash settlement |
+| Testing | ✅ Comprehensive (926 total tests) | 603 backend unit tests + 323 web tests passing (100% green) |
+| Documentation | ✅ Up-to-date (v2.1) | Master Spec, API Changelog, Core Migrations, System Ecosystem synced |
+| CI / DevOps | ✅ Docker & independent CI | Dockerfiles + GitHub Actions CI workflows across all repos |
 
 ---
 
@@ -87,6 +87,21 @@ All 24 audit tasks have been successfully implemented and tested:
 | **D2-13** | **Support Cases (SM Operations)** | **COMPLETED** | `Backend: support-cases.module.ts, controller, service`<br>`Frontend: SupportQueuePage.vue, SupportDetailPage.vue` | **PASS** (Manager dispute resolution queue, escalation, audit logging) |
 | **D2-14** | **Admin/Manager Web Real API** | **COMPLETED** | `Frontend: Console Layout, Admin pages, Support pages` | **PASS** (Eliminated mock data, fail-closed operational dashboards) |
 | **D2-15** | **Integration & Hardening** | **COMPLETED** | `Backend & Frontend: TypeCheck, vitest (331 backend / 104 frontend tests)` | **PASS** (Complete branch merge into `Truonghoang` with 100% green tests) |
+
+---
+
+## Dev 3 Feature Expansion & Platform Hardening Tasks (Completed 2026-09-24)
+
+| Task ID | Task Title | Status | Components Modified / Created | Verification |
+| :--- | :--- | :---: | :--- | :---: |
+| **D3-01** | **Cloudinary Media Storage Migration** | **COMPLETED** | `Backend: CloudinaryModule, CloudinaryProvider, order-evidence-storage.service.ts, private-booking-photo-storage.service.ts`<br>`Frontend: media.api.ts, NewBookingWizardPage.vue` | **PASS** (Migrated from Supabase to Cloudinary authenticated upload & 5-minute signed URLs, `cloudinary://evidence/...`) |
+| **D3-02** | **Test Mock Isolation Hardening** | **COMPLETED** | `Backend: order-evidence-storage.service.spec.ts` | **PASS** (`vi.clearAllMocks()` prevents `vi.fn()` history leakage; 603/603 backend unit tests pass) |
+| **D3-03** | **VNPay Online Payment Integration** | **COMPLETED** | `Backend: vnpay.controller.ts, vnpay.util.ts, finance.service.ts, service-orders.controller.ts`<br>`Frontend: VNPayReturnPage.vue, CustomerOrderDetailPage.vue` | **PASS** (`POST /invoices/:id/vnpay-url`, HMAC-SHA512 checksum, IPN webhook & return redirect, invoice & order auto-completion) |
+| **D3-04** | **Public Order Tracking & Live Map** | **COMPLETED** | `Backend: service-orders.controller.ts (track endpoint), service-orders.service.ts`<br>`Frontend: PublicOrderTrackingPage.vue, tracking.api.ts` | **PASS** (`GET /orders/track?code=...&phone=...`, public access without JWT, live map with technician GPS polling) |
+| **D3-05** | **Technician Service Radius** | **COMPLETED** | `Backend: Migration 1790000000004-TechnicianServiceRadius.ts, technician-profile.entity.ts, technician-eligibility.ts`<br>`Frontend: TechnicianProfilePage.vue` | **PASS** (KTV configures `service_radius_km` from base address; matching filter respects radius) |
+| **D3-06** | **Repair Evidence Deletion** | **COMPLETED** | `Backend: service-orders.controller.ts, order-evidence-storage.service.ts`<br>`Frontend: TechnicianJobDetailPage.vue` | **PASS** (`DELETE /service-orders/:id/evidence/:evidenceId` with Cloudinary object destroy) |
+| **D3-07** | **Realtime Chat Gateway & Mobile Sync** | **COMPLETED** | `Backend: messaging.module.ts, messaging.gateway.ts, messaging.controller.ts`<br>`Mobile: messages screen, chat thread composer, socket lifecycle`<br>`Frontend: ChatDrawer.vue` | **PASS** (WebSocket Socket.IO real-time thread, handshake resilience, auto-reconnect) |
+| **D3-08** | **Geo Post-2025 Units & Schedule Dedupe** | **COMPLETED** | `Backend: Migration 1790000000003-DedupeAndConstrainScheduleAndAddress.ts, geo.service.ts, seed-users.ts` | **PASS** (Vietnam post-2025 administrative units, unique constraints on schedules & addresses) |
 
 ---
 

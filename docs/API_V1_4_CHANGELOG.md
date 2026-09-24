@@ -272,3 +272,138 @@
 | `ERR_PAYMENT_MANUAL_BYPASS` | 400 | Chặn yêu cầu tự set PAID mà không qua xác nhận 2 chiều |
 | `ERR_EVIDENCE_REQUIRED` | 422 | Thiếu ảnh BEFORE khi bắt đầu sửa hoặc thiếu ảnh AFTER khi hoàn tất |
 | `ERR_GPS_OUT_OF_BOUNDS` | 422 | Khoảng cách GPS vượt quá ngưỡng cho phép tại địa chỉ nhà khách |
+| `ERR_VNPAY_NOT_CONFIGURED` | 503 | Cổng thanh toán VNPay chưa được bật cấu hình LIVE |
+| `ERR_ORDER_TRACKING_FAILED` | 404 | Sai mã đơn hàng hoặc số điện thoại không khớp đơn hàng |
+| `ERR_INVALID_MEDIA_TYPE` | 400 | Định dạng tệp tin không hợp lệ (chỉ chấp nhận JPEG, PNG, WebP) |
+
+---
+
+## 4. Đặc tả Hợp đồng API Mới — Phiên bản v2.1 (Cập nhật 24/09/2026)
+
+### 4.1 Thanh toán Trực tuyến VNPay (Online Payment Gateway)
+
+#### `POST /api/v1/invoices/:id/vnpay-url`
+- **Actor:** CUSTOMER (người tạo đơn)
+- **Mục tiêu:** Tạo URL chuyển hướng (Redirect URL) thanh toán qua cổng VNPay cho hóa đơn dịch vụ chưa thanh toán.
+- **Request Headers:** `Authorization: Bearer <access_token>`
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "data": {
+      "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=35000000&vnp_Command=pay&vnp_CreateDate=20260924131500&vnp_CurrCode=VND&vnp_IpAddr=127.0.0.1&vnp_Locale=vn&vnp_OrderInfo=Thanh+toan+hoa+don+INV-123&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A3000%2Ffinance%2Fvnpay%2Freturn&vnp_TmnCode=FIXHOME1&vnp_TxnRef=INV-123-1727150100&vnp_Version=2.1.0&vnp_SecureHash=abcdef..."
+    }
+  }
+  ```
+
+#### `GET /api/v1/finance/vnpay/return`
+- **Actor:** Public (Trình duyệt người dùng được redirect từ VNPay sau khi nhập OTP ngân hàng)
+- **Cơ chế:** Kiểm tra chữ ký `vnp_SecureHash` bằng thuật toán HMAC-SHA512. Nếu hợp lệ và `vnp_ResponseCode === '00'`, server tự động đánh dấu hóa đơn `PAID` và chuyển đơn dịch vụ sang trạng thái hoàn tất, sau đó chuyển hướng về trang Frontend `${FRONTEND_URL}/vnpay-return?payment=success&orderId=...&invoiceId=...`.
+
+#### `GET /api/v1/finance/vnpay/ipn`
+- **Actor:** Public (Server-to-server Webhook gọi ngầm từ VNPay)
+- **Mục tiêu:** Nguồn thẩm quyền tuyệt đối (Sole source of truth) ghi nhận giao dịch thành công kể cả khi người dùng tắt trình duyệt trước khi chuyển hướng.
+
+---
+
+### 4.2 Tra cứu Tiến độ Đơn hàng Công khai (Public Order Tracking)
+
+#### `GET /api/v1/orders/track?code=:orderCode&phone=:customerPhone`
+- **Actor:** Public (Không yêu cầu đăng nhập JWT)
+- **Mục tiêu:** Cho phép khách hàng hoặc người thân theo dõi tiến độ đơn hàng và vị trí thợ di chuyển trực tiếp qua mã đơn hàng và số điện thoại.
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "data": {
+      "orderId": "order-uuid-123",
+      "orderCode": "ORD-20260924-001",
+      "status": "EN_ROUTE",
+      "technician": {
+        "fullName": "Trần Văn B",
+        "phoneNumber": "0987654321",
+        "rating": 4.9,
+        "currentLatitude": 10.7769,
+        "currentLongitude": 106.7009
+      },
+      "scheduledDate": "2026-09-24",
+      "scheduledTimeSlot": "14:00 - 16:00",
+      "serviceName": "Vệ sinh máy lạnh treo tường",
+      "timeline": [
+        { "status": "REQUESTED", "createdAt": "2026-09-24T10:00:00Z" },
+        { "status": "ACCEPTED", "createdAt": "2026-09-24T10:05:00Z" },
+        { "status": "EN_ROUTE", "createdAt": "2026-09-24T13:30:00Z" }
+      ]
+    }
+  }
+  ```
+
+---
+
+### 4.3 Xóa Bằng chứng Sửa chữa (Evidence Deletion)
+
+#### `DELETE /api/v1/service-orders/:id/evidence/:evidenceId`
+- **Actor:** TECHNICIAN (người sở hữu đơn hàng đang trong ca làm việc)
+- **Mục tiêu:** Xóa ảnh bằng chứng chụp nhầm hoặc mờ khỏi đơn hàng và tự động hủy object lưu trữ tương ứng trên Cloudinary.
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "Xóa ảnh bằng chứng thành công"
+  }
+  ```
+
+---
+
+### 4.4 Lưu trữ Đa phương tiện Cloudinary (Cloudinary Media Storage)
+
+#### `POST /api/v1/media/booking-photo-upload`
+- **Actor:** CUSTOMER
+- **Content-Type:** `multipart/form-data`
+- **Field:** `file` (ảnh JPG, PNG, WebP tối đa 10MB)
+- **Mục tiêu:** Tải ảnh tình trạng hư hỏng lên Cloudinary Authenticated Private Storage. Trả về reference `cloudinary://evidence/...`.
+- **Response (201 Created):**
+  ```json
+  {
+    "success": true,
+    "statusCode": 201,
+    "data": {
+      "id": "upload-uuid-001",
+      "storageReference": "cloudinary://evidence/fixhome/bookings/booking-123/owner-456/uuid.jpg",
+      "signedUrl": "https://res.cloudinary.com/.../authenticated/..."
+    }
+  }
+  ```
+
+---
+
+### 4.5 Cấu hình Bán kính Hoạt động Kỹ thuật viên (Service Radius)
+
+#### `PATCH /api/v1/technicians/me/profile`
+- **Actor:** TECHNICIAN
+- **Request Body:**
+  ```json
+  {
+    "serviceRadiusKm": 15
+  }
+  ```
+- **Mục tiêu:** Thiết lập bán kính phục vụ tối đa (ví dụ: 15km) tính từ địa chỉ đăng ký của thợ. Thuật toán điều phối chỉ gửi lời mời nếu vị trí khách hàng nằm trong bán kính này.
+
+---
+
+### 4.6 Nhắn tin Thời gian thực (Real-time Chat Socket & REST)
+
+#### REST Endpoints:
+- `GET /api/v1/conversations`: Danh sách các cuộc hội thoại đang hoạt động của người dùng.
+- `GET /api/v1/conversations/:id/messages`: Lấy lịch sử tin nhắn trong cuộc hội thoại (phân trang).
+- `POST /api/v1/messages`: Gửi tin nhắn văn bản mới.
+
+#### WebSocket Socket.IO Gateway Events:
+- `chat:join`: Client tham gia room hội thoại theo `conversationId`.
+- `chat:send`: Gửi payload tin nhắn qua Socket.
+- `chat:received`: Broadcast tin nhắn tức thì tới các thành viên trong phòng.
+- `chat:read`: Đánh dấu đã đọc tin nhắn trong phòng.
+

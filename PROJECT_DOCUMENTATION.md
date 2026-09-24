@@ -47,9 +47,13 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 
 ## 5. Project Scope
 
-### 5.1 In Scope (Phạm vi hiện tại — Spec v2.0)
-- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC) với phân định rõ rệt quyền Quản trị (Admin) và Vận hành hỗ trợ (Service Manager).
-- **Hồ sơ KYC Kỹ thuật viên bảo mật cao (Admin KYC):** Lưu trữ CCCD mặt trước, mặt sau và ảnh chụp chân dung (face photo) trên Private Storage Supabase, cơ chế cấp URL chữ ký điện tử có thời hạn (Signed Access URL), chỉ Admin và chính chủ mới có quyền truy cập (`fail-closed`). Đồng bộ trạng thái `VERIFIED` sang hồ sơ thợ và ghi nhật ký kiểm toán bất biến.
+### 5.1 In Scope (Phạm vi hiện tại — Spec v2.1)
+- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC) với phân định rõ rệt quyền Quản trị (Admin) và Vận hành hỗ trợ (Service Manager). Phân tách luồng OTP đăng ký và quên mật khẩu trên Mobile.
+- **Hồ sơ KYC Kỹ thuật viên bảo mật cao (Admin KYC):** Lưu trữ CCCD mặt trước, mặt sau và ảnh chân dung trên Cloudinary Authenticated Storage, cấp URL chữ ký điện tử có thời hạn (5 phút Signed Access URL), chỉ Admin và chính chủ mới có quyền truy cập (`fail-closed`). Đồng bộ trạng thái `VERIFIED` sang hồ sơ thợ và ghi nhật ký kiểm toán bất biến.
+- **Lưu trữ Bằng chứng & Đa phương tiện (Media Storage Migration):** Chuyển dịch toàn diện từ Supabase sang **Cloudinary Authenticated Private Storage** cho ảnh bằng chứng sửa chữa (`order-evidences`) và ảnh đặt lịch (`booking-photo-upload`). Định dạng tham chiếu bảo mật `cloudinary://evidence/...`, kiểm tra magic bytes của buffer tệp tin (JPEG, PNG, WebP) và hỗ trợ xóa ảnh (`DELETE /service-orders/:id/evidence/:evidenceId`).
+- **Thanh toán Trực tuyến VNPay (Online Payment Gateway):** Tích hợp cổng thanh toán VNPay cho hóa đơn dịch vụ (`POST /invoices/:id/vnpay-url`), kiểm tra chữ ký băm mật mã HMAC-SHA512, xử lý IPN webhook và return URL callback tự động đối soát, cập nhật hóa đơn sang `PAID` và hoàn tất đơn dịch vụ, kết hợp song song cùng phương thức **Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation)**.
+- **Tra cứu Đơn hàng Công khai (Public Order Tracking):** Cung cấp endpoint công khai không cần đăng nhập (`GET /orders/track?code=...&phone=...`), cho phép khách hàng tra cứu tiến độ đơn hàng và vị trí di chuyển trực tiếp của thợ trên bản đồ số thông qua mã đơn và số điện thoại.
+- **Bán kính Hoạt động Thợ (Technician Service Radius):** Cho phép kỹ thuật viên tùy chỉnh bán kính phục vụ (`service_radius_km`) từ địa chỉ cơ sở, tích hợp vào thuật toán matching và điều phối đơn hàng.
 - **Xác minh Kỹ năng Chuyên môn Thợ (Skill Verification):** Thợ nộp chứng chỉ, bằng cấp theo từng dịch vụ đăng ký cung cấp; Admin thẩm định duyệt/từ chối; chỉ những kỹ năng đạt trạng thái `VERIFIED` mới đủ điều kiện xuất hiện trong danh sách ứng viên (Candidate Discovery) và nhận đơn.
 - **Admin Onboarding Thợ:** Admin có quyền tạo và kích hoạt tài khoản kỹ thuật viên trực tiếp từ màn hình Console Quản trị.
 - **Điều phối thợ thủ công (Manual Assignment):** Cho phép Service Manager và Admin phân công hoặc ghi đè thợ nhận việc khi xảy ra tình huống khẩn cấp hoặc khách yêu cầu đặc biệt.
@@ -57,24 +61,23 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 - **Danh mục Dịch vụ & Linh kiện chính hãng:** Phân cấp danh mục cha con, dịch vụ giá cố định (`FIXED_PRICE` - chặn thợ ghi đè giá sàn) và khảo sát báo giá (`INSPECTION_REQUIRED`), danh mục linh kiện FixHome (Part Catalog) chỉ quản lý thông số, giá niêm yết và thời hạn bảo hành (hoàn toàn không quản lý kho vận WMS).
 - **Sổ đăng ký Cấu hình Hệ thống (Business Config Registry):** Đăng ký tập trung các tham số vận hành (tỷ lệ hoa hồng, thời gian huỷ đơn tự động, số ca tối đa/thợ) có phân loại trạng thái hiệu lực (`ACTIVE`, `PENDING_WIRING`, `STALE_REVIEW`).
 - **Nhật ký Kiểm toán Vận hành (Audit Log):** Cơ chế ghi nhật ký bất biến (append-only) cho mọi thao tác nhạy cảm của Admin và Service Manager.
-- **Khu vực hoạt động:** Chuẩn hóa theo mã định danh hành chính quận/huyện tại Hà Nội và TP.HCM.
-- **AI Diagnosis Service (4 Tầng):** Tự host trên GPU riêng với YOLO11s (22 thiết bị), RAG 134 mã lỗi và Qwen2.5-VL-3B-AWQ; Backend có cơ chế fallback tự động, hoàn toàn không chặn luồng nghiệp vụ.
+- **Khu vực hoạt động & Địa giới hành chính:** Chuẩn hóa theo danh mục hành chính Việt Nam sau 2025 (Hà Nội, TP.HCM và các tỉnh lân cận).
+- **AI Diagnosis Service (4 Tầng):** Tự host trên GPU riêng với YOLO11s (22 thiết bị), RAG 134 mã lỗi và Qwen2.5-VL-3B-AWQ; Backend có cơ chế fallback tự động, hoàn toàn không chặn luồng nghiệp vụ; bổ sung pipeline CI kiểm thử tự động.
 - **Booking & Matching:** Đặt lịch 5 bước, khám phá ứng viên thợ, shortlist tối đa 5 thợ, gửi lời mời tuần tự (Sequential Invitation) với khóa dòng chống race condition.
 - **Đổi lịch hẹn (Customer Reschedule):** Khách hàng chủ động đổi ngày/khung giờ khi đơn chưa bắt đầu sửa chữa.
 - **Thợ rút khỏi đơn (Technician Withdraw):** Rút khỏi đơn kèm lý do minh bạch trước khi đến nơi, hệ thống tự động mời ứng viên tiếp theo.
 - **State Machine D-22:** `ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED`. Tự động huỷ đơn quá hạn sau lịch hẹn.
 - **Check-in GPS & Bằng chứng ảnh:** Geofencing xác minh thợ đã tới vị trí khách hàng (<500m); chốt chặn bắt buộc ảnh `BEFORE` trước khi sửa và ảnh `AFTER` trước khi hoàn tất.
 - **Báo giá & Phát sinh:** Báo giá khảo sát thực tế, khách duyệt/từ chối; chi phí phát sinh D-11 bất biến có liên kết phiên bản `supersedesId` và đính kèm ảnh bằng chứng hư hại thực tế.
-- **Bảo mật Tài chính & Thu công nợ:** Máy chủ làm thẩm quyền duy nhất xác thực thanh toán (`isOrderPaymentSatisfied`), chặn đứng lỗ hổng fake PAID từ client; chuẩn hóa **Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation)** và tự động trích nợ hoa hồng PlatformDue (chặn điều phối thợ nếu nợ quá hạn).
+- **Bảo mật Tài chính & Thu công nợ:** Máy chủ làm thẩm quyền duy nhất xác thực thanh toán (`isOrderPaymentSatisfied`), tự động trích nợ hoa hồng PlatformDue (chặn điều phối thợ nếu nợ quá hạn).
 - **Tiến trình đơn động (Real Timeline):** Đồng bộ trực tiếp từ `OrderStatusHistory`.
-- **Module Thông báo & Tin nhắn thời gian thực:** WebSocket Gateway Socket.IO phục vụ chat giữa Khách hàng và Kỹ thuật viên khi đơn đang hoạt động; thông báo đẩy và badge tin chưa đọc.
+- **Module Thông báo & Tin nhắn thời gian thực:** WebSocket Gateway Socket.IO phục vụ chat giữa Khách hàng và Kỹ thuật viên khi đơn đang hoạt động; hỗ trợ đồng bộ luồng chat trên ứng dụng di động với cơ chế tự phục hồi kết nối.
 - **Responsive Web & Mobile App:** Giao diện Vue 3 Responsive trên Web và ứng dụng di động React Native / Expo 57 trên iOS/Android.
 - **Đánh giá & Bảo hành:** Đánh giá thợ D-09 (duy nhất 1 lần/đơn), tạo yêu cầu bảo hành và quản lý phiếu bảo hành.
 
 ### 5.2 Out of Scope (Ngoại phạm vi)
-- **Chat trực tiếp giữa Service Manager và Thợ:** Quản lý xử lý sự cố thông qua quy trình Support Case có lưu vết Audit.
-- **Cổng thanh toán trực tuyến (VNPay / Online Payment):** Tạm thời chưa kích hoạt do chờ thông tin Merchant ID đối tác; hệ thống vận hành trơn tru qua Cash Dual-Confirmation.
-- **Live GPS Tracking liên tục theo thời gian thực:** Sử dụng xác thực GPS Check-in tại điểm đến kết hợp tính khoảng cách địa lý.
+- **Chat trực tiếp giữa Service Manager và Thợ:** Quản lý xử lý sự cố thông qua quy trình Support Case có lưu vết Audit thay vì nhắn tin trực tiếp.
+- **Giám sát vị trí KTV ngầm liên tục 24/7 ngoài đơn hàng:** Chỉ cập nhật tọa độ phục vụ check-in tại nhà khách và tra cứu tiến độ khi đang thực hiện đơn di chuyển (`EN_ROUTE`).
 - **Quản lý kho vận phức tạp (Warehouse / Inventory Management / WMS):** FixHome cung cấp danh mục định giá linh kiện mà không theo dõi tồn kho vật lý đa kho.
 
 ---
@@ -115,6 +118,10 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 | 30 | Admin Technician Onboarding | ✅ Create technician account & initial profile | ✅ Admin Users onboard modal | — | **COMPLETED** |
 | 31 | Manual Technician Assignment | ✅ SM/Admin manual assign & override | ✅ Console Bookings assign board | — | **COMPLETED** |
 | 32 | Real-time Messaging (Chat) | ✅ Socket.IO Gateway, conversation entity | ✅ MessagesPage.vue | ✅ ChatList & ChatThread | **COMPLETED** |
+| 33 | Cloudinary Private Storage | ✅ Authenticated uploads, 5-min signed URLs, delete | ✅ Direct upload in wizard & job detail | ✅ Multipart upload fix | **COMPLETED** |
+| 34 | VNPay Payment Gateway | ✅ URL generation, HMAC-SHA512, IPN & return auto-complete | ✅ VNPay return polling & redirect | — | **COMPLETED** |
+| 35 | Public Order Tracking | ✅ Public endpoint `/orders/track` by code & phone | ✅ Public tracking page & live map | — | **COMPLETED** |
+| 36 | Technician Service Radius | ✅ `service_radius_km` on profile & candidate matching | ✅ Radius slider/picker in Tech Profile | — | **COMPLETED** |
 
 ---
 
@@ -132,20 +139,20 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
                                            v
                    +-----------------------------------------------+
                    |              NestJS Backend API               |
-                   |       (16 Modules, TypeORM, Vitest)           |
+                   |       (18 Modules, TypeORM, Vitest, Guards)           |
                    +-----------+-----------------------+-----------+
                                |                       |
                   TypeORM / SQL|                       | HTTP Client (Axios)
                                v                       v
-                   +-----------+----------+  +---------+-----------+
-                   | PostgreSQL Database  |  |  FastAPI AI Service |
-                   |  (PostgreSQL 16,     |  +---------+-----------+
-                   |   14 Migrations)     |            |
-                   +----------------------+            | Provider Abstraction
-                                                       v
-                                             +---------+-----------+
-                                             | Gemini / OpenAI API |
-                                             +---------------------+
+            +------------+---------+  +------+------+  +-------+-----------+
+            | PostgreSQL Database  |  |  Cloudinary |  | FastAPI AI Service|
+            | (PostgreSQL 16,      |  | Authenticated| +-------+-----------+
+            |  32 Migrations)      |  |  Storage    |          |
+            +----------------------+  +-------------+          | Provider Abstraction
+                                                               v
+                                                     +---------+-----------+
+                                                     | Gemini / OpenAI API |
+                                                     +---------------------+
 ```
 
 ---
@@ -171,7 +178,7 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
                         │
           (Thợ sửa xong + Báo giá duyệt)
           (AFTER Photo + Thợ báo xong)
-          (Khách nghiệm thu + Trả tiền mặt)
+          (Khách nghiệm thu + VNPay / Trả tiền mặt)
                         ↓
                   [ COMPLETED ] (Terminal)
 ```
@@ -182,13 +189,13 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 3. **Evidence Gating:**
    - Để vào `UNDER_REPAIR`: Phải có ít nhất 1 ảnh `BEFORE`.
    - Để vào `COMPLETED`: Phải có ít nhất 1 ảnh `AFTER` và 0 chi phí phát sinh nào đang chờ duyệt.
-4. **Không tự set PAID:** Nghiêm cấm client tự ý set đơn hàng thành `PAID`. Quy trình thanh toán tiền mặt yêu cầu xác nhận 2 chiều giữa Khách hàng và Thợ.
+4. **Không tự set PAID:** Nghiêm cấm client tự ý set đơn hàng thành `PAID`. Thanh toán trực tuyến chỉ được xác nhận khi VNPay IPN/Return trả về mã băm HMAC-SHA512 hợp lệ; thanh toán tiền mặt yêu cầu xác nhận 2 chiều giữa Khách hàng và Thợ.
 
 ---
 
 ## 9. Database Migrations History
 
-Toàn bộ 14 migrations đã được thực thi và kiểm thử tính toàn vẹn trên PostgreSQL:
+Toàn bộ **32 migrations** đã được thực thi và kiểm thử tính toàn vẹn trên PostgreSQL 16:
 
 1. `1725888000000-InitialBaseline.ts` (Users, Roles, RefreshTokens)
 2. `1725889000000-ServiceCatalogAndVerification.ts` (Categories, Services, KYC)
@@ -198,12 +205,29 @@ Toàn bộ 14 migrations đã được thực thi và kiểm thử tính toàn v
 6. `1725893000000-Phase2ServiceCatalogAndAreas.ts` (Service areas)
 7. `1725894000000-Phase3to8BusinessLogic.ts` (Bookings, Orders, Quotes, Reviews)
 8. `1725895000000-SpecV12PricingAndSettlement.ts` (Pricing modes, Settlements, Dues)
-9. `1725896000000-SpecV14GapFixes.ts` (FixHome Parts, Part warranty options)
-10. `1725897000000-Dev1Integrity.ts` (State machine constraints)
-11. `1725898000000-Dev1EvidenceAndDueMetadata.ts` (Order evidences, Platform dues)
-12. `1725899000000-CustomerServiceAreaAndCodes.ts` (Administrative district codes)
-13. `1725900000000-TechnicianRoleEnhancements.ts` (Schedules, Withdrawals, OrderStatusHistory)
-14. `1725901000000-DropDev1ChatTables.ts` (An toàn loại bỏ Chat khỏi scope Dev 1)
+9. `1725896000000-KycVerifiedAndFacePhoto.ts` (KYC photo attributes & face photo)
+10. `1725896000000-SpecV14GapFixes.ts` (FixHome Parts, Part warranty options)
+11. `1725897000000-Dev1Integrity.ts` (State machine constraints)
+12. `1725897000000-KycPrivateStorageReference.ts` (KYC storage reference metadata)
+13. `1725898000000-Dev1EvidenceAndDueMetadata.ts` (Order evidences, Platform dues)
+14. `1725898000000-FixHomePartCatalog.ts` (FixHome official parts catalog)
+15. `1725899000000-CustomerServiceAreaAndCodes.ts` (Administrative district codes)
+16. `1725899000000-SupportCases.ts` (Dispute management support cases)
+17. `1725900000000-FinanceWaveFoundation.ts` (Finance foundation entities)
+18. `1725900000000-TechnicianRoleEnhancements.ts` (Schedules, Withdrawals, OrderStatusHistory)
+19. `1725901000000-DropDev1ChatTables.ts` (An toàn dọn dẹp bảng chat Dev 1)
+20. `1725902000000-KycPrivateStorageBucket.ts` (KYC private storage bucket)
+21. `1725902000000-MessagingChat.ts` (Realtime chat messaging entities)
+22. `1725903000000-OtpVerifications.ts` (OTP verification storage)
+23. `1725904000000-ServiceOrderTechnicianLocation.ts` (Technician realtime location on order)
+24. `1726800000000-AdditionalCostEvidence.ts` (Evidence attachment for additional costs)
+25. `1726900000000-TechnicianSkillVerification.ts` (Technician skill certifications)
+26. `1727000000000-SimultaneousInvitationRoundIndex.ts` (Invitation round indexing)
+27. `1790000000000-PrivateBookingPhotoUploads.ts` (Private booking photo metadata)
+28. `1790000000001-BookingMediaPrivateUploadReference.ts` (Booking media private reference link)
+29. `1790000000002-BookingInvitationGroups.ts` (Invitation candidate groupings)
+30. `1790000000003-DedupeAndConstrainScheduleAndAddress.ts` (Deduplication & unique constraints)
+31. `1790000000004-TechnicianServiceRadius.ts` (Technician service radius `service_radius_km`)
 
 ---
 
@@ -211,14 +235,15 @@ Toàn bộ 14 migrations đã được thực thi và kiểm thử tính toàn v
 
 - **Backend (NestJS):**
   - Typecheck: `tsc --noEmit` -> **0 errors**
-  - Lint: `oxlint` -> **0 warnings, 0 errors** (265 files)
-  - Unit Tests: `vitest run` -> **20/20 test suites passed, 129/129 tests passed**
+  - Lint: `oxlint` -> **0 warnings, 0 errors**
+  - Unit Tests: `vitest run` -> **77/77 test suites passed, 603/603 tests passed (100% green)**
   - Build: `nest build` -> **PASS**
 - **Web Frontend (Vue 3):**
   - Typecheck: `vue-tsc -b` -> **0 errors**
   - Lint: `eslint .` -> **0 warnings, 0 errors**
-  - Unit Tests: `vitest run` -> **3/3 test suites passed, 14/14 tests passed**
+  - Unit Tests: `vitest run` -> **37/37 test files passed, 323/323 tests passed (100% green)**
   - Build: `vite build` -> **PASS** (~4.5s)
+  - Storage Isolation: `vi.clearAllMocks()` bảo đảm độc lập tuyệt đối giữa các test suite
 - **Data Integrity:**
   - **Zero Mock Data:** Tất cả dữ liệu Khách hàng và Thợ hiển thị trên Web đều gọi API thực từ Backend.
   - **Zero Broken Routes:** Đã kiểm tra toàn diện, chuyển hướng chính xác các đường dẫn.

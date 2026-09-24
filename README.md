@@ -49,9 +49,10 @@
 ```text
 Web (Vue 3 + Vite) ────────┐
 (Customer, Tech & Console)  │
-                            ├──> NestJS Backend API ───> PostgreSQL 16 (16 Migrations)
-Mobile (React Native Expo) ──┤    (State Machine D-22,
-(Customer & Tech App)       │     Zero Mock Data, 5-Layer Guards)
+                            ├──> NestJS Backend API ───> PostgreSQL 16 (32 Migrations)
+Mobile (React Native Expo) ──┤    (State Machine D-22,   ├──> Cloudinary Authenticated Storage
+(Customer & Tech App)       │     VNPay + Cash Dual,     └──> WebSocket Realtime Chat Gateway
+                            │     Zero Mock Data, 5-Layer Guards)
                             │
                             └──> FastAPI AI Service ───> YOLO11s (22 thiết bị) + Qwen2.5-VL + RAG
 ```
@@ -62,11 +63,12 @@ Mobile (React Native Expo) ──┤    (State Machine D-22,
 
 | Thành phần | Công nghệ chính | Trạng thái Chất lượng (Quality Gate) |
 | :--- | :--- | :--- |
-| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16 | **392/392 unit tests pass** (51 suites), **57/57 E2E tests pass**, 0 lint error (`oxlint`), 0 type error, build dist pass |
-| **Web** | Vue.js 3, Vite, TailwindCSS v4, Pinia, TypeScript | **109/109 tests pass**, 0 lint error (`eslint`), 0 type error, Vite build pass |
-| **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | Lint pass, Navigation Customer & Tech, Profile, Jobs, Chat Socket |
-| **AI Service** | FastAPI, Python 3.11, vLLM, YOLO11s, Qwen2.5-VL | 4-tier engine: Hội thoại -> Thị giác -> Tri thức (3.319 đoạn) -> Ngôn ngữ |
-| **Database** | PostgreSQL 16 (Docker) | **16 migrations** chạy trơn tru |
+| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16, Cloudinary, VNPay | **603/603 unit tests pass** (77 suites), 0 lint error (`oxlint`), 0 type error, build dist pass |
+| **Web** | Vue 3, Vite, TailwindCSS, Pinia, TypeScript | **323/323 tests pass** (37 suites), 0 lint error, 0 type error, Vite build pass |
+| **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | Auth OTP/Password reset split, Realtime Chat Socket thread, KYC upload resilience |
+| **AI Service** | FastAPI, Python 3.11, vLLM, YOLO11s, Qwen2.5-VL | 4-tier engine: Hội thoại -> Thị giác -> Tri thức (3.319 đoạn) -> Ngôn ngữ (CI tooling & governance) |
+| **Database** | PostgreSQL 16 (Docker) | **32 migrations** chạy trơn tru, unique constraint deduplication |
+| **Storage** | Cloudinary Private Authenticated Storage | Signed URLs có thời hạn (5 phút), whitelist JPEG/PNG/WebP magic bytes |
 
 ---
 
