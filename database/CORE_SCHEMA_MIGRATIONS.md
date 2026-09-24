@@ -1,7 +1,7 @@
 # FixHome — Core Database Schema & Migrations
 
 > **Owner**: Core Platform & Backend Team  
-> **Status**: 32 MIGRATIONS EXECUTED & VERIFIED  
+> **Status**: IMPLEMENTED; migration execution in the 2026-09-24 Parts audit is NOT VERIFIED.
 > **Last Updated**: 2026-09-24 (Aligned with Spec v2.1)
 
 Tài liệu này quy chuẩn cấu trúc cơ sở dữ liệu nền tảng và danh mục toàn bộ các bản migration của hệ thống FixHome trên PostgreSQL 16.
@@ -22,7 +22,7 @@ Tài liệu này quy chuẩn cấu trúc cơ sở dữ liệu nền tảng và d
 
 ---
 
-## 2. Toàn Bộ 32 TypeORM Migrations Đã Thực Thi
+## 2. Danh mục TypeORM Migrations
 
 | STT | File Migration | Nội dung & Bảng thay đổi |
 | :---: | :--- | :--- |
@@ -57,6 +57,12 @@ Tài liệu này quy chuẩn cấu trúc cơ sở dữ liệu nền tảng và d
 | 29 | `1790000000002-BookingInvitationGroups.ts` | Nhóm danh sách ứng viên (candidate groups) và quản lý shortlist thợ. |
 | 30 | `1790000000003-DedupeAndConstrainScheduleAndAddress.ts` | Khử trùng lặp và thêm ràng buộc duy nhất (Unique Constraints) trên lịch làm việc thợ và địa chỉ. |
 | 31 | `1790000000004-TechnicianServiceRadius.ts` | Bổ sung cột bán kính hoạt động phục vụ (`service_radius_km`) vào hồ sơ kỹ thuật viên `technician_profiles`. |
+| 32 | `1790000000005-PartRequestsAndLifecycle.ts` | Parts Request, request items, fulfillment, QR handover và USED/RETURNED. |
+| 33 | `1790000000006-PartRequestIntegrity.ts` | FK/check/unique constraints cho Parts, chỉ mục ngày tạo và `invoices.shipping_fee`. Chưa chạy trên PostgreSQL trong audit này. |
+
+Hợp đồng Parts hiện tại và giới hạn migration nằm trong
+[Parts API](../api/PARTS_AND_QUOTATIONS.md). Migration mới không tự xóa hay sửa
+dữ liệu tài chính cũ nếu vi phạm ràng buộc; cần kiểm tra dữ liệu trước triển khai.
 
 ---
 

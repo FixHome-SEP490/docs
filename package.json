@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "lint": "echo \"Docs repository: lint check skipped (documentation storage only)\"",
-    "check:links": "echo \"Docs repository: link check skipped\"",
-    "validate": "echo \"Docs repository: validation skipped\"",
+    "lint": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
+    "check:links": "node scripts/validate-docs.mjs links",
+    "validate": "node scripts/validate-docs.mjs governance",
     "test": "echo \"Docs repository: static documentation only\""
   },
   "devDependencies": {
