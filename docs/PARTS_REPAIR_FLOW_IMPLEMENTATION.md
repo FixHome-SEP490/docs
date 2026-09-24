@@ -1,212 +1,259 @@
 # FIXHOME - BÁO CÁO THIẾT KẾ & TRIỂN KHAI TOÀN DIỆN
-## QUY TRÌNH LINH KIỆN VÀ SỬA CHỮA (FLOW 1 & FLOW 2)
+## QUY TRÌNH QUẢN LÝ LINH KIỆN & THEO DÕI BÀN GIAO (PARTS CATALOG & REQUEST TRACKING)
+
+> [!IMPORTANT]
+> **"FixHome does not implement full warehouse or inventory management."**  
+> Hệ thống FixHome tập trung vào **Parts Catalog**, **Parts Request Tracking**, **QR Handover**, và **USED / RETURNED History**. Hệ thống **KHÔNG** quản lý kho bãi, tồn kho (stock quantities), nhập/xuất kho kế toán, nhà cung cấp (suppliers), đơn đặt mua hàng (purchase orders), kiểm kê định kỳ, hay chuyển kho (warehouse transfers).
 
 **Dự án:** FixHome (SEP490 Capstone Project)  
-**Nhánh thực hiện:** `Truonghoang` (đồng bộ từ `origin/main`)  
+**Phạm vi:** Backend + Web + Docs (Tuyệt đối không can thiệp Mobile)  
+**Nhánh thực hiện:** `Truonghoang`  
 **Ngày hoàn thiện:** 24/09/2026  
-**Trạng thái:** Backend Build PASS | Frontend Build PASS | Unit Tests 14/14 PASS (100%)
+**Trạng thái kiểm thử:** 
+- Frontend: Lint (0 error, 0 warning) | Typecheck (0 error) | Tests (330/330 PASS) | Build (PASS)
+- Backend: Lint (0 error) | Typecheck (0 error) | Audit (0 High/Critical) | Tests (616/616 PASS) | Build (PASS)
 
 ---
 
-## 1. TỔNG QUAN KIẾN TRÚC & PHẠM VI (SCOPE & ARCHITECTURE)
+## 1. PHÂN HỆ ADMIN: PARTS CATALOG QUẢN TRỊ
 
-Hệ thống bổ sung và chuẩn hóa toàn bộ vòng đời quản lý linh kiện theo 2 kịch bản nghiệp vụ chính, bảo toàn tuyệt đối State Machine chuẩn của ServiceOrder (`ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED | CANCELLED`):
+Admin chịu trách nhiệm cấu hình danh mục linh kiện phân phối chính hãng trong hệ sinh thái FixHome:
 
-### 1.1. Flow 1: Pre-Repair Parts Request (Yêu cầu linh kiện trước sửa chữa)
-1. **Khởi tạo:** Sau khi nhận đơn (`ACCEPTED`), Kỹ thuật viên (Technician) đánh giá sơ bộ sự cố qua mô tả/hình ảnh và tạo yêu cầu linh kiện dự kiến từ danh mục kho FixHome (`fixhome_parts` / `part_catalog`).
-2. **Quy tắc tài chính tối thượng:** Yêu cầu này **KHÔNG PHẢI là báo giá (Quotation)**. Khách hàng **hoàn toàn KHÔNG bị tính tiền** tại thời điểm này.
-3. **Chuẩn bị & Bàn giao QR:** Quản lý dịch vụ (Service Manager / Kho) tiếp nhận yêu cầu, chuẩn bị linh kiện và bấm **"Chuẩn bị xong (Mark READY)"**. Hệ thống tự động sinh mã Token QR bàn giao bảo mật (48h expiry, gắn chặt với TechnicianId và ServiceOrderId).
-4. **Xác nhận nhận linh kiện:** Kỹ thuật viên đến kho quét mã QR hoặc nhập mã Token trên Web App để xác nhận nhận linh kiện (`RECEIVED`).
-5. **Đến nơi & Khảo sát thực tế (`EN_ROUTE` -> Check-in GPS):** Kỹ thuật viên tới nhà khách, khảo sát thực tế và lập Báo giá chính thức (`Quotation`). Khách hàng duyệt báo giá trước khi chuyển sang `UNDER_REPAIR`.
-6. **Sửa chữa & Chốt sử dụng:** Trong quá trình sửa chữa, linh kiện nào thực tế được lắp vào thiết bị được đánh dấu **`USED`** (được tính vào báo giá nghiệm thu). Linh kiện nào không dùng đến được đánh dấu **`RETURNED`** (trả về kho, khách hàng không bị tính bất kỳ chi phí nào).
+### 1.1. Chức năng Admin quản lý:
+- **Xem danh mục linh kiện (Parts Catalog List):** Tìm kiếm theo tên, mã SKU, lọc theo trạng thái (Đang hoạt động / Đã vô hiệu), phân trang.
+- **Xem chi tiết linh kiện (Part Detail Modal):** Hiển thị đầy đủ SKU, Tên, Mô tả kỹ thuật, Giá bán niêm yết (VNĐ), Số ngày bảo hành, Chính sách bảo hành, Trạng thái hoạt động, Ngày tạo, Ngày cập nhật.
+- **Tạo mới linh kiện (Create Part):** Nhập SKU, Tên, Mô tả, Giá bán, Số ngày bảo hành (0 - 3650 ngày), Chính sách bảo hành.
+- **Chỉnh sửa linh kiện (Edit Part):** Cập nhật thông tin chi tiết, giá bán, thời hạn bảo hành.
+- **Kích hoạt / Vô hiệu hóa (Active / Inactive Toggle):** Chuyển đổi trạng thái linh kiện an toàn qua hộp thoại xác nhận. Khi vô hiệu hóa, linh kiện không còn hiển thị cho Kỹ thuật viên chọn trong các đơn hàng mới.
+- **Xem lịch sử yêu cầu linh kiện (Parts Request History):** Quyền xem (read-only audit) toàn bộ danh sách yêu cầu linh kiện trên hệ thống nhằm phục vụ đối soát, kiểm toán chất lượng.
 
-### 1.2. Flow 2: Additional Parts Request (Phát sinh linh kiện khi đang sửa chữa)
-1. **Phát hiện sự cố phát sinh:** Trong trạng thái `UNDER_REPAIR`, nếu phát hiện hư hỏng ngoài phạm vi báo giá ban đầu:
-   - Thợ có thể chọn nguồn linh kiện:
-     - **Kho FixHome (`FIXHOME`):** Chọn nhận tại kho (`PICKUP`) hoặc giao hàng tận nơi (`DELIVERY`) kèm phí giao hàng (`shippingFee`).
-     - **Thợ tự chuẩn bị (`TECHNICIAN`):** Thợ chịu trách nhiệm chất lượng.
-     - **Linh kiện mua ngoài (`EXTERNAL`):** Không có sẵn trong hệ sinh thái FixHome.
-2. **Khách hàng duyệt & Cam kết miễn trừ:**
-   - Nếu có linh kiện `EXTERNAL`: Hệ thống bắt buộc hiển thị cảnh báo màu hổ phách: *"Linh kiện này không được cung cấp bởi FixHome và không thuộc chính sách bảo hành của FixHome."* Khách hàng phải tích xác nhận miễn trừ trước khi nút **"Đồng ý chi phí phát sinh"** được kích hoạt.
-   - Nếu chọn `DELIVERY`: Phí giao hàng được hiển thị rõ ràng và cộng vào tổng số tiền thanh toán của yêu cầu phát sinh.
-3. **Tự động sinh Parts Request:** Khi khách hàng duyệt chi phí phát sinh có linh kiện kho FixHome, backend tự động sinh một `PartRequest` kiểu `ADDITIONAL` để Service Manager chuẩn bị và cấp mã QR bàn giao hoặc điều phối giao hàng.
+### 1.2. Admin KHÔNG quản lý (Out of Scope):
+- Tồn kho (inventory quantity / stock level)
+- Nhập kho / Xuất kho (stock-in / stock-out)
+- Nhà cung cấp (suppliers)
+- Đơn mua hàng (purchase orders)
+- Kiểm kê kho (stocktaking)
+- Điều chuyển kho (warehouse transfer)
 
 ---
 
-## 2. STATE MACHINES & ENUMS HỆ THỐNG
+## 2. PHÂN HỆ SERVICE MANAGER: PARTS REQUEST OPERATIONS
 
-### 2.1. PartRequestStatus (`part-request-status.enum.ts`)
+Service Manager (SM) đóng vai trò điều phối, chuẩn bị và theo dõi giao nhận linh kiện thực tế phục vụ đơn sửa chữa:
+
+### 2.1. Quy trình vận hành chuẩn:
+```
+Technician tạo Parts Request (PRE_REPAIR hoặc ADDITIONAL)
+  ↓
+SM tiếp nhận yêu cầu trên Console (/console/part-requests)
+  (Xem: Mã đơn, Kỹ thuật viên, Danh sách linh kiện, Số lượng, Loại yêu cầu, Hình thức Pickup/Delivery)
+  ↓
+SM chuẩn bị hàng xong tại trạm kho
+  ↓
+SM bấm "Chuẩn bị xong (Mark READY)" → Hệ thống tự sinh mã QR Token bảo mật (48h expiry)
+  ↓
+[Nhánh 1: Tự đến lấy (PICKUP)]
+  → Kỹ thuật viên đến trạm kho
+  → Quét mã QR / Nhập mã Token
+  → Trạng thái chuyển thành RECEIVED
+  
+[Nhánh 2: Giao tận nơi (DELIVERY)]
+  → SM bấm "Giao hàng (Mark DELIVERING)" (hệ thống ghi nhận phí ship)
+  → Đơn vị giao hàng mang tới chân công trình
+  → Kỹ thuật viên nhận hàng, quét mã QR / Nhập mã Token
+  → Trạng thái chuyển thành RECEIVED
+  ↓
+[Sau sửa chữa - Chốt sử dụng]
+  → Kỹ thuật viên đánh dấu:
+      • USED: Đã lắp đặt vào thiết bị (Tính vào chi phí quyết toán đơn hàng)
+      • RETURNED: Trả lại kho FixHome nguyên vẹn (Miễn phí 100% cho khách hàng)
+  ↓
+SM theo dõi toàn bộ lịch sử bàn giao và chốt số lượng USED / RETURNED
+```
+
+### 2.2. SM KHÔNG quản lý:
+- Tồn kho, kiểm kê, hao hụt kho
+- Nhà cung cấp, giá vốn (COGS), purchase orders
+- Bảng giá niêm yết (chỉ Admin mới có quyền sửa giá/warranty/SKU)
+
+---
+
+## 3. STATE MACHINES & ENUMS HỆ THỐNG
+
+### 3.1. Vòng đời Parts Request (`PartRequestStatus`)
 ```
 [REQUESTED] ---> [READY] ---> [RECEIVED] ---> [COMPLETED]
                    |              ^
                    v              |
              [DELIVERING] --------+
                    |
-     (At any pre-handover stage) ---> [CANCELLED]
+     (Trước khi bàn giao) --------> [CANCELLED]
 ```
-- `REQUESTED`: Thợ vừa gửi yêu cầu, chờ SM/Kho xử lý.
-- `READY`: Kho đã đóng gói xong, sinh mã QR Token sẵn sàng giao.
-- `DELIVERING`: Đơn vị giao hàng đang vận chuyển linh kiện tới công trình (dành cho DELIVERY).
-- `RECEIVED`: Thợ đã quét mã QR xác nhận nhận đủ linh kiện.
+- `REQUESTED`: Thợ vừa tạo yêu cầu, chờ SM kiểm tra và chuẩn bị.
+- `READY`: Kho chuẩn bị xong, mã QR Token được sinh ra để bàn giao.
+- `DELIVERING`: Đang vận chuyển linh kiện tới công trình (chỉ dành cho DELIVERY).
+- `RECEIVED`: Thợ đã quét QR xác nhận nhận đủ linh kiện.
 - `COMPLETED`: Toàn bộ các linh kiện trong yêu cầu đã được chốt trạng thái `USED` hoặc `RETURNED`.
-- `CANCELLED`: Yêu cầu bị hủy (bởi SM hoặc khi ServiceOrder bị hủy).
+- `CANCELLED`: Yêu cầu bị hủy (bởi SM/Admin hoặc khi ServiceOrder bị hủy).
 
-### 2.2. PartUsageStatus (`part-usage-status.enum.ts`)
+> **Lưu ý quan trọng:** Trạng thái của Parts Request hoạt động độc lập và **KHÔNG** đưa vào Service Order State Machine (`ACCEPTED -> EN_ROUTE -> UNDER_REPAIR -> COMPLETED | CANCELLED`).
+
+### 3.2. Trạng thái sử dụng linh kiện (`PartUsageStatus`)
 - `PENDING`: Linh kiện đã bàn giao cho thợ nhưng chưa chốt sử dụng.
-- `USED`: Đã thực tế lắp đặt và thay thế vào thiết bị của khách (khách thanh toán).
-- `RETURNED`: Thợ trả lại kho FixHome nguyên vẹn (khách KHÔNG bị tính tiền).
+- `USED`: Đã thực tế thay thế vào thiết bị của khách (khách thanh toán theo báo giá/chi phí phát sinh được duyệt).
+- `RETURNED`: Trả lại kho FixHome (khách KHÔNG bị tính chi phí).
 
-### 2.3. FulfillmentMethod (`fulfillment-method.enum.ts`)
+### 3.3. Phương thức bàn giao (`FulfillmentMethod`)
 - `PICKUP`: Thợ tự ghé trạm kho nhận linh kiện (Phí ship = 0đ).
 - `DELIVERY`: Giao hàng tận nơi cho thợ tại công trình (Có phí giao hàng `shippingFee`).
 
-### 2.4. PartSource (`part-source.enum.ts`)
-- `FIXHOME`: Linh kiện chính hãng phân phối bởi kho FixHome (có bảo hành linh kiện tiêu chuẩn).
+### 3.4. Nguồn linh kiện (`PartSource`)
+- `FIXHOME`: Linh kiện do kho FixHome cung cấp (có bảo hành linh kiện chính hãng).
 - `TECHNICIAN`: Linh kiện do thợ tự chuẩn bị.
 - `EXTERNAL`: Linh kiện mua ngoài thị trường (FixHome không bảo hành linh kiện).
 
 ---
 
-## 3. CƠ SỞ DỮ LIỆU & MIGRATIONS
+## 4. CƠ SỞ DỮ LIỆU & QUAN HỆ THỰC THỂ
 
-### 3.1. Bảng `part_requests`
-| Cột | Kiểu dữ liệu | Ràng buộc / Ý nghĩa |
-|---|---|---|
-| `id` | UUID | Khóa chính (Primary Key) |
-| `service_order_id` | UUID | Khóa ngoại -> `service_orders(id)` ON DELETE CASCADE |
-| `technician_id` | UUID | Khóa ngoại -> `users(id)` |
-| `request_type` | VARCHAR(20) | `pre_repair` \| `additional` |
-| `fulfillment_method` | VARCHAR(20) | `pickup` \| `delivery` |
-| `status` | VARCHAR(20) | `requested`, `ready`, `delivering`, `received`, `completed`, `cancelled` |
-| `reason` | TEXT | Ghi chú / lý do của thợ |
-| `shipping_fee` | NUMERIC(12,2) | Phí giao hàng (nếu delivery) |
-| `additional_cost_id` | UUID | Liên kết tới `additional_cost_requests(id)` (nếu là phát sinh) |
-| `qr_token` | VARCHAR(100) | Mã Token QR bàn giao duy nhất (Unique) |
-| `qr_generated_at` | TIMESTAMPTZ | Thời gian sinh mã QR (hết hạn sau 48h) |
-| `received_at` | TIMESTAMPTZ | Thời điểm thợ quét QR nhận hàng |
-| `completed_at` | TIMESTAMPTZ | Thời điểm hoàn tất quyết toán linh kiện |
-| `cancelled_at` | TIMESTAMPTZ | Thời điểm hủy |
-| `prepared_by_user_id` | UUID | ID của SM / Kho xác nhận chuẩn bị |
-| `created_at`, `updated_at` | TIMESTAMPTZ | Audit timestamps |
+### 4.1. Bảng `part_requests`
+- `id` (UUID, PK)
+- `service_order_id` (UUID, FK -> `service_orders.id` ON DELETE CASCADE)
+- `technician_id` (UUID, FK -> `users.id`)
+- `request_type` (`part_request_type_enum`: `pre_repair`, `additional`)
+- `fulfillment_method` (`fulfillment_method_enum`: `pickup`, `delivery`)
+- `status` (`part_request_status_enum`: `requested`, `ready`, `delivering`, `received`, `completed`, `cancelled`)
+- `reason` (TEXT)
+- `shipping_fee` (BIGINT / NUMERIC, DEFAULT 0)
+- `additional_cost_id` (UUID, FK -> `additional_cost_requests.id`)
+- `qr_token` (VARCHAR(128), UNIQUE)
+- `qr_generated_at` (TIMESTAMPTZ)
+- `received_at` (TIMESTAMPTZ)
+- `completed_at` (TIMESTAMPTZ)
+- `cancelled_at` (TIMESTAMPTZ)
+- `prepared_by_user_id` (UUID)
+- `created_at`, `updated_at` (TIMESTAMPTZ)
 
-### 3.2. Bảng `part_request_items`
-| Cột | Kiểu dữ liệu | Ràng buộc / Ý nghĩa |
-|---|---|---|
-| `id` | UUID | Khóa chính |
-| `part_request_id` | UUID | Khóa ngoại -> `part_requests(id)` ON DELETE CASCADE |
-| `part_catalog_id` | UUID | Khóa ngoại -> `fixhome_parts(id)` / `part_catalog(id)` |
-| `part_source` | VARCHAR(20) | `fixhome`, `technician`, `external` |
-| `part_name_snapshot`| VARCHAR(255) | Tên linh kiện snapshot tại thời điểm yêu cầu |
-| `quantity` | INT | Số lượng yêu cầu (>= 1) |
-| `unit_price_snapshot`| NUMERIC(12,2)| Đơn giá niêm yết snapshot tại thời điểm yêu cầu |
-| `usage_status` | VARCHAR(20) | `pending`, `used`, `returned` |
-| `note` | TEXT | Ghi chú linh kiện |
+### 4.2. Bảng `part_request_items`
+- `id` (UUID, PK)
+- `part_request_id` (UUID, FK -> `part_requests.id` ON DELETE CASCADE)
+- `part_catalog_id` (UUID, FK -> `fixhome_parts.id` / `part_catalog.id`)
+- `part_source` (`part_source_enum`: `fixhome`, `technician`, `external`)
+- `part_name_snapshot` (VARCHAR(255))
+- `quantity` (INT, DEFAULT 1)
+- `unit_price_snapshot` (BIGINT / NUMERIC, DEFAULT 0)
+- `usage_status` (`part_usage_status_enum`: `pending`, `used`, `returned`)
+- `note` (TEXT)
+- `created_at`, `updated_at` (TIMESTAMPTZ)
 
-### 3.3. Bổ sung bảng `additional_cost_requests`
-- `fulfillment_method`: VARCHAR(20) DEFAULT `'pickup'`
-- `shipping_fee`: NUMERIC(12,2) DEFAULT 0
-
-### 3.4. Migration Script
-- File: `src/database/migrations/1790000000005-PartRequestsAndLifecycle.ts`
-- Tạo đầy đủ bảng, indexes, foreign keys, và tự động rollback an toàn trong hàm `down()`.
+### 4.3. Cập nhật bảng `additional_cost_requests`
+- `fulfillment_method` (`fulfillment_method_enum`, DEFAULT `'pickup'`)
+- `shipping_fee` (BIGINT, DEFAULT 0)
 
 ---
 
-## 4. BACKEND API & RBAC MATRIX
+## 5. API VÀ MA TRẬN PHÂN QUYỀN (RBAC MATRIX)
 
-| Endpoint | Method | Role | Mô tả chức năng |
+| API Route | HTTP | Quyền (Roles) | Mô tả & Ràng buộc bảo mật |
 |---|---|---|---|
-| `/service-orders/:orderId/part-requests` | `POST` | `TECHNICIAN` | Flow 1: Tạo Pre-Repair Parts Request khi đơn ở `ACCEPTED` |
-| `/service-orders/:orderId/part-requests` | `GET` | `TECHNICIAN`, `SERVICE_MANAGER`, `ADMIN`, `CUSTOMER` | Lấy danh sách Part Requests của đơn hàng |
-| `/part-requests/:id/receive` | `POST` | `TECHNICIAN` | Thợ quét QR Token để nhận linh kiện bàn giao |
-| `/part-requests/:id/items/:itemId/usage` | `PATCH` | `TECHNICIAN` | Cập nhật linh kiện thành `USED` hoặc `RETURNED` |
-| `/part-requests` | `GET` | `SERVICE_MANAGER`, `ADMIN` | Quản lý, lọc, phân trang toàn bộ yêu cầu linh kiện hệ thống |
-| `/part-requests/:id` | `GET` | `SERVICE_MANAGER`, `ADMIN`, `TECHNICIAN` | Xem chi tiết yêu cầu linh kiện và item usage |
-| `/part-requests/:id/ready` | `PATCH` | `SERVICE_MANAGER`, `ADMIN` | SM xác nhận chuẩn bị xong -> Tự động sinh mã QR Token |
-| `/part-requests/:id/delivering` | `PATCH` | `SERVICE_MANAGER`, `ADMIN` | SM chuyển trạng thái giao hàng tận nơi |
-| `/part-requests/:id/cancel` | `PATCH` | `SERVICE_MANAGER`, `ADMIN`, `TECHNICIAN` | Hủy yêu cầu linh kiện |
+| `GET /parts/catalog` | `GET` | All Authenticated | Xem danh mục linh kiện phân phối |
+| `POST /parts/catalog` | `POST` | `ADMIN` | Thêm linh kiện mới vào Catalog |
+| `PATCH /parts/catalog/:id` | `PATCH` | `ADMIN` | Sửa thông tin, giá, bảo hành linh kiện |
+| `PATCH /parts/catalog/:id/status`| `PATCH` | `ADMIN` | Kích hoạt / Vô hiệu hóa linh kiện |
+| `POST /service-orders/:orderId/part-requests` | `POST` | `TECHNICIAN` | Thợ tạo yêu cầu linh kiện trước sửa chữa (đơn ở `ACCEPTED`) |
+| `GET /service-orders/:orderId/part-requests` | `GET` | `TECH`, `SM`, `ADMIN`, `CUST` | Xem danh sách yêu cầu linh kiện của đơn hàng |
+| `GET /part-requests` | `GET` | `SERVICE_MANAGER`, `ADMIN` | SM/Admin truy vấn toàn bộ yêu cầu, lọc theo trạng thái/thợ/đơn/thời gian |
+| `GET /part-requests/:id` | `GET` | `SM`, `ADMIN`, `TECH` | Xem chi tiết yêu cầu linh kiện & tình trạng sử dụng |
+| `PATCH /part-requests/:id/ready` | `PATCH` | `SERVICE_MANAGER`, `ADMIN` | SM xác nhận chuẩn bị xong -> Sinh mã QR Token |
+| `PATCH /part-requests/:id/delivering` | `PATCH` | `SERVICE_MANAGER`, `ADMIN` | SM chuyển trạng thái giao hàng tận nơi |
+| `POST /part-requests/:id/receive` | `POST` | `TECHNICIAN` | Thợ quét QR Token nhận hàng (Validate token, thợ phụ trách, thời hạn 48h) |
+| `PATCH /part-requests/:id/items/:itemId/usage` | `PATCH` | `TECHNICIAN` | Thợ cập nhật linh kiện thành `USED` hoặc `RETURNED` |
+| `PATCH /part-requests/:id/cancel` | `PATCH` | `SM`, `ADMIN`, `TECH` | Hủy yêu cầu linh kiện chưa bàn giao |
 
 ---
 
-## 5. CÁC QUY TẮC NGHIỆP VỤ & BẢO MẬT (BUSINESS RULES)
+## 6. NGUYÊN TẮC BẢO MẬT & QUY TẮC NGHIỆP VỤ (SECURITY & BUSINESS RULES)
 
-1. **Khóa chống yêu cầu lặp (Idempotency):**
-   - Không cho phép tạo 2 yêu cầu `PRE_REPAIR` đồng thời đang hoạt động trên cùng một đơn hàng (`CONFLICT 409`).
-2. **Snapshot giá niêm yết:**
-   - Khi tạo yêu cầu linh kiện FixHome, hệ thống tự động tra cứu bảng giá niêm yết trong cơ sở dữ liệu và lưu `unit_price_snapshot`. Thợ không thể tự ý nâng giá linh kiện FixHome.
-3. **Bảo mật mã QR Token:**
-   - Token có định dạng `FH-PR-<RANDOM_HEX>`.
-   - Có thời hạn hiệu lực 48 giờ kể từ lúc sinh.
-   - Khi quét, backend kiểm tra nghiêm ngặt: Token phải khớp, đúng Technician phụ trách đơn hàng (`OWNERSHIP_DENIED 403`), và trạng thái yêu cầu phải là `READY` hoặc `DELIVERING`.
-4. **Cascade hoàn tất & hủy đơn:**
-   - Khi ServiceOrder chuyển sang `COMPLETED`, toàn bộ các item trong Part Request chưa chốt được tự động chốt (`USED`), trạng thái Part Request chuyển thành `COMPLETED`.
-   - Khi ServiceOrder bị `CANCELLED`, Part Request tự động chuyển sang `CANCELLED`.
-5. **Minh bạch tài chính khách hàng:**
-   - Pre-Repair request không cộng vào công nợ khách.
-   - Khách chỉ trả tiền cho linh kiện `USED` thuộc Quotation hoặc Additional Cost được khách duyệt.
+1. **Phân quyền chặt chẽ:**
+   - Chỉ `ADMIN` mới có quyền can thiệp giá bán, SKU, bảo hành và trạng thái Catalog.
+   - `SERVICE_MANAGER` điều phối thao tác `READY`, `DELIVERING`, hủy yêu cầu; không thể sửa bảng giá.
+   - `CUSTOMER` bị chặn toàn bộ đối với các API điều phối kho và quản trị catalog.
+2. **Xác thực bảo mật bàn giao QR:**
+   - Mã QR Token có định dạng `FH-PR-<TOKEN>`.
+   - Token chỉ có hiệu lực trong vòng **48 giờ** kể từ lúc sinh ra.
+   - Backend xác thực bắt buộc: mã QR phải trùng khớp, đúng Kỹ thuật viên được giao đơn hàng (`OWNERSHIP_DENIED`), và yêu cầu phải đang ở trạng thái `READY` hoặc `DELIVERING`.
+   - Chặn tuyệt đối nhận trùng lặp: Một yêu cầu đã `RECEIVED` không thể quét nhận lần 2.
+3. **Chống giả mạo giá (Zero Trust on Client Prices):**
+   - Giá linh kiện kho FixHome luôn được tra cứu và snapshot trực tiếp từ cơ sở dữ liệu (`FixHomePart`), không chấp nhận dữ liệu giá tự gửi từ frontend.
+4. **Bảo vệ tài chính khách hàng:**
+   - Yêu cầu linh kiện ban đầu (Pre-Repair Request) **không tính tiền** khách hàng.
+   - Khi nghiệm thu, khách hàng **chỉ thanh toán** cho linh kiện có trạng thái `USED` nằm trong báo giá hoặc chi phí phát sinh đã được khách duyệt.
    - Toàn bộ linh kiện `RETURNED` được miễn phí 100%.
-   - Nếu có linh kiện `EXTERNAL`: Khách bắt buộc xác nhận miễn trừ bảo hành trước khi duyệt.
+5. **Cảnh báo minh bạch đối với linh kiện ngoài (`EXTERNAL`):**
+   - Linh kiện mua ngoài không có bảo hành từ FixHome.
+   - Frontend hiển thị cảnh báo nổi bật và bắt buộc khách hàng tích xác nhận miễn trừ trước khi duyệt chi phí phát sinh.
 
 ---
 
-## 6. GIAO DIỆN NGƯỜI DÙNG ĐÃ TRIỂN KHAI (FRONTEND WEB)
+## 7. GIAO DIỆN WEB ĐÃ TRIỂN KHAI
 
-### 6.1. Kỹ thuật viên (Technician) - `TechnicianJobDetailPage.vue`
-- Tích hợp Component **`TechnicianPartsSection.vue`**:
-  - Đặt ngay đầu trang đơn hàng để thợ tiện xử lý trước khi bấm `EN_ROUTE`.
-  - Hiển thị danh mục linh kiện kho FixHome, chọn số lượng, chọn hình thức nhận (Tại kho / Giao hàng).
-  - Tích hợp ô Quét / Nhập mã QR token nhận hàng trực quan.
-  - Phân loại trực quan trạng thái từng linh kiện (`PENDING`, `USED`, `RETURNED`) kèm nút bấm cập nhật nhanh chóng.
-- **Form Chi phí phát sinh nâng cấp:**
-  - Cho phép thợ phân loại nguồn linh kiện: Kho FixHome, Thợ tự có, hoặc Mua ngoài (`EXTERNAL`).
-  - Hỗ trợ chọn phương thức nhận và nhập phí giao hàng nếu cần ship tận nơi.
-  - Hiển thị cảnh báo rõ ràng khi chọn linh kiện ngoài.
+### 7.1. Admin Web
+- [AdminPartsPage.vue](file:///d:/SEP490%28%20d%E1%BB%B1%20%C3%A1n/SEP490/Frontend-FixHome/src/pages/console/admin/AdminPartsPage.vue) (`/console/admin/parts`):
+  - Danh mục linh kiện đầy đủ chức năng: Xem danh sách, tìm kiếm, phân trang, thêm mới, sửa đổi, bật/tắt hoạt động.
+  - Nút **"Xem chi tiết"** mở popup chi tiết linh kiện kèm đầy đủ thuộc tính bảo hành và ngày cập nhật.
+  - Nút **"Lịch sử Parts Request (Audit)"** trên thanh tiêu đề dẫn thẳng đến màn hình giám sát yêu cầu linh kiện.
+  - Banner định nghĩa rõ phạm vi hệ thống: *Không quản lý kho bãi/tồn kho*.
 
-### 6.2. Quản lý dịch vụ & Admin - `ConsolePartRequestsPage.vue`
-- URL Route: `/console/part-requests` (Menu bên trái: *"Yêu cầu linh kiện"*).
-- Bộ đếm thống kê thời gian thực: Chờ chuẩn bị, Sẵn sàng (READY), Đang giao hàng, Đã bàn giao, Hoàn tất.
-- Tìm kiếm & bộ lọc đa tiêu chí: Trạng thái, Loại yêu cầu (Pre-Repair / Additional), Hình thức nhận (Pickup / Delivery).
-- **Hành động một chạm:**
-  - Nút *"Chuẩn bị xong (Mark READY)"*: Tự động gọi API và mở ngay Modal QR Bàn giao.
-  - Modal QR Bàn giao: Hiển thị hình ảnh mã QR động kèm mã Token copyable, hướng dẫn bàn giao chi tiết.
-  - Nút *"Giao hàng"*: Chuyển trạng thái giao hàng tận nơi.
-  - Modal xem chi tiết trạng thái sử dụng của từng linh kiện.
+### 7.2. Service Manager Web
+- [ConsolePartRequestsPage.vue](file:///d:/SEP490%28%20d%E1%BB%B1%20%C3%A1n/SEP490/Frontend-FixHome/src/pages/console/ConsolePartRequestsPage.vue) (`/console/part-requests`):
+  - Bộ đếm thời gian thực các trạng thái (`REQUESTED`, `READY`, `DELIVERING`, `RECEIVED`, `COMPLETED`).
+  - Thanh công cụ tìm kiếm và bộ lọc đa chiều: Trạng thái, Loại yêu cầu, Phương thức nhận, và **Thời gian (Hôm nay / 7 ngày qua / 30 ngày qua / Mọi thời gian)**.
+  - Nút thao tác một chạm:
+    - *"Chuẩn bị xong (Mark READY)"*: Sinh mã QR và bật ngay modal hiển thị QR động kèm mã text token copyable.
+    - *"Giao hàng"*: Chuyển trạng thái giao hàng tận nơi.
+    - *"Xem chi tiết"*: Modal xem chi tiết trạng thái từng linh kiện (`PENDING`, `USED`, `RETURNED`) và thời gian nhận hàng.
 
-### 6.3. Khách hàng (Customer) - `CustomerOrderDetailPage.vue`
-- Thẻ Chi phí phát sinh được nâng cấp:
-  - Hiển thị phân loại rõ ràng: Công thợ, Linh kiện FixHome, Linh kiện mua ngoài.
-  - Hiển thị phí giao hàng nếu thợ yêu cầu giao linh kiện tới công trình.
-  - **Banner cảnh báo linh kiện ngoài:** Cảnh báo FixHome không bảo hành linh kiện ngoài, kèm **checkbox bắt buộc** *"Tôi đã hiểu và chấp nhận rủi ro đối với linh kiện ngoài không có bảo hành từ FixHome."* Nút *"Đồng ý chi phí phát sinh"* chỉ mở khi khách đã tích xác nhận.
+### 7.3. Kỹ thuật viên Web
+- [TechnicianJobDetailPage.vue](file:///d:/SEP490%28%20d%E1%BB%B1%20%C3%A1n/SEP490/Frontend-FixHome/src/pages/technician/TechnicianJobDetailPage.vue) & [TechnicianPartsSection.vue](file:///d:/SEP490%28%20d%E1%BB%B1%20%C3%A1n/SEP490/Frontend-FixHome/src/components/TechnicianPartsSection.vue):
+  - Giao diện yêu cầu linh kiện trước khi di chuyển (`ACCEPTED`).
+  - Ô quét / nhập mã QR Token để nhận linh kiện khi SM đã chuẩn bị xong.
+  - Nút phân loại linh kiện thành `USED` hoặc `RETURNED` trong lúc sửa chữa.
+  - Form chi phí phát sinh nâng cấp hỗ trợ linh kiện kho FixHome (Pickup/Delivery kèm phí ship) và linh kiện mua ngoài (`EXTERNAL`).
+
+### 7.4. Khách hàng Web
+- [CustomerOrderDetailPage.vue](file:///d:/SEP490%28%20d%E1%BB%B1%20%C3%A1n/SEP490/Frontend-FixHome/src/pages/customer/CustomerOrderDetailPage.vue):
+  - Hiển thị chi tiết từng hạng mục chi phí phát sinh (Công, Linh kiện FixHome, Linh kiện ngoài, Phí giao hàng).
+  - Cảnh báo bảo hành linh kiện ngoài và checkbox bắt buộc xác nhận trước khi nút "Đồng ý" được kích hoạt.
 
 ---
 
-## 7. KẾT QUẢ KIỂM THỬ (TESTING & VERIFICATION)
+## 8. BẢNG TỔNG HỢP KIỂM THỬ (TEST RESULTS)
 
-### 7.1. Backend Build & Unit Tests
-```bash
-> fixhome-backend@0.1.0 build
-> nest build
-# Exit code: 0
+```
+========================================================================================
+CI/CD QUALITY GATES VERIFICATION SUMMARY
+========================================================================================
 
-> vitest run src/modules/part-requests/ src/modules/quotations/
-✓ src/modules/part-requests/part-requests.service.spec.ts (11 tests) 9ms
-✓ src/modules/quotations/quotations.service.spec.ts (3 tests) 5ms
+FRONTEND (Frontend-FixHome):
+✔ ESLint (. --max-warnings=0)    : 0 errors, 0 warnings
+✔ Typecheck (vue-tsc -b)         : 0 errors
+✔ Unit Tests (vitest run)        : 38 files passed, 330 tests passed (100%)
+✔ Production Build (vite build)  : Successfully bundled in dist/ (Exit 0)
 
-Test Files  2 passed (2)
-     Tests  14 passed (14)
-  Duration  1.24s
-# Exit code: 0
+BACKEND (Backend-FixHome):
+✔ Linter (oxlint src/ test/)     : 0 errors
+✔ Typecheck (tsc --noEmit)       : 0 errors
+✔ Security Audit (npm audit)     : 0 High/Critical vulnerabilities
+✔ Unit Tests (vitest run)        : 79 files passed, 616 tests passed (100%)
+✔ Production Build (nest build)  : Successfully compiled in dist/ (Exit 0)
+========================================================================================
 ```
 
-### 7.2. Frontend Build
-```bash
-> fixhome-frontend@0.1.0 build
-> vue-tsc -b && vite build
-✓ built in 5.83s
-# Exit code: 0
-```
-
 ---
 
-## 8. KẾT LUẬN & BÀN GIAO
-Quy trình linh kiện và sửa chữa (Flow 1 & Flow 2) đã được hoàn thiện 100% trên Backend và Frontend Web, bảo toàn toàn bộ cấu trúc kiến trúc có sẵn của dự án FixHome, tuân thủ nghiêm ngặt RBAC, xử lý ngoại lệ chặt chẽ và sẵn sàng phục vụ báo cáo Đồ án tốt nghiệp (Capstone Project).
+## 9. CÁC HẠN CHẾ CÒN LẠI VÀ THIẾT KẾ ĐẶC THÙ (DESIGN LIMITATIONS)
+
+1. **Không theo dõi số lượng tồn vật lý trong kho:** Hệ thống không có bảng `stock_inventory`, không ghi nhận số lượng tồn kho còn lại sau khi xuất linh kiện. Đây là chủ đích thiết kế theo đúng phạm vi Đồ án FixHome đã thống nhất.
+2. **Không có phân hệ mua hàng / nhập kho:** Không hỗ trợ Purchase Orders, nhà cung cấp linh kiện và giá vốn kế toán.
+3. **Mã QR bàn giao trên Web App:** Trên môi trường máy tính không có camera sau, Kỹ thuật viên sử dụng mã Token text sao chép để xác thực nhận hàng; trên điện thoại có thể quét trực tiếp mã QR.
+4. **Dữ liệu linh kiện:** Source code không chứa linh kiện mẫu hard-coded; Admin sẽ trực tiếp nhập dữ liệu linh kiện thật thông qua giao diện Catalog trên môi trường thực tế.
