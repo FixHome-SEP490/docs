@@ -17,7 +17,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Documentation repository verification
-        run: |
-          echo "Docs-FixHome: Static documentation and project changelogs storage repository."
-          echo "Quality gates passed. No application runtime or build dependencies required."
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run check:links
+      - run: npm run validate

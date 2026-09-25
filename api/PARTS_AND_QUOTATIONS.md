@@ -1,139 +1,148 @@
-# FixHome API — Parts Catalog, Quotations & Additional Costs
+# FixHome API — Parts Catalog, Requests, Quotations & Additional Costs
 
-> **Base Path**: `/api/v1`  
-> **Auth Required**: Bearer JWT (Access Token)  
-> **Standard Response Format**: `{ "success": boolean, "statusCode": number, "message": string, "data": any }`
+Status: IMPLEMENTED. Live PostgreSQL migration/E2E verification is BLOCKED in the
+2026-09-24 audit: PostgreSQL is unavailable at `127.0.0.1:5432`.
 
----
+FixHome does not implement full warehouse or inventory management.
+Scope: catalog metadata, requests, QR handover and USED/RETURNED history.
+No stock balances/movements, suppliers, purchase orders or procurement.
 
-## 1. Parts Catalog Endpoints (Danh mục linh kiện chính hãng FixHome)
+## 1. Roles and catalog
 
-### 1.1 Get Parts Catalog
-- **Method & Path**: `GET /parts`
-- **Roles**: All authenticated roles
-- **Query Parameters**: `serviceId` (tùy chọn để lọc theo dịch vụ), `search` (tên hoặc mã linh kiện)
-- **Response (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "statusCode": 200,
-    "data": [
-      {
-        "id": "part-uuid-01",
-        "serviceId": "service-uuid-01",
-        "name": "Tụ ngậm quạt dàn lạnh Daikin 2.5uF",
-        "code": "PART-DK-001",
-        "price": 120000,
-        "warrantyMonths": 6,
-        "isFixHomeProvided": true,
-        "description": "Linh kiện chính hãng FixHome cung ứng"
-      }
-    ]
-  }
-  ```
+Base path: `/api/v1`; Bearer JWT required. Existing response envelope:
+`{ success, statusCode, message, data, meta? }`. Wire enums are lowercase.
 
-### 1.2 Get Parts by Service
-- **Method & Path**: `GET /services/:id/parts`
-- **Roles**: All authenticated roles
+| Actor | Permissions |
+| --- | --- |
+| Admin | Catalog CRUD/active status; request history read-only |
+| Service Manager | Catalog read; request operations and handover |
+| Technician | Current assigned order and own requests only |
+| Customer | Own order request history and financial approvals only |
 
----
+Reuse `PartsCatalogModule`, `FixHomePart`, `AdminPartsPage`.
 
-## 2. Quotation Endpoints (Báo giá dịch vụ)
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| GET/POST | `/admin/parts` | Admin list/create |
+| GET/PATCH | `/admin/parts/:id` | Admin detail/edit |
+| PATCH | `/admin/parts/:id/status` | Admin; body `{ isActive }` |
+| GET | `/parts/catalog` | Technician/SM/Admin, active only |
+| GET | `/parts/catalog/:id` | Technician/SM/Admin, active detail |
 
-### 2.1 Create Quotation (Tạo báo giá sau khảo sát)
-- **Method & Path**: `POST /quotations`
-- **Roles**: `technician` (thợ được phân công cho đơn hàng)
-- **Condition**: Đơn hàng đang ở trạng thái `EN_ROUTE` hoặc `UNDER_REPAIR` và chưa có báo giá đã duyệt.
-- **Request Body**:
-  ```json
-  {
-    "serviceOrderId": "order-uuid-456",
-    "laborCost": 150000,
-    "items": [
-      {
-        "partId": "part-uuid-01",
-        "name": "Tụ ngậm quạt dàn lạnh Daikin 2.5uF",
-        "quantity": 1,
-        "unitPrice": 120000,
-        "isFixHomeProvided": true,
-        "warrantyMonths": 6
-      },
-      {
-        "name": "Ống đồng Thái Lan 0.71mm (1m)",
-        "quantity": 2,
-        "unitPrice": 180000,
-        "isFixHomeProvided": false,
-        "warrantyMonths": 0
-      }
-    ],
-    "note": "Khảo sát thực tế phát hiện quạt chập tụ và xì ống đồng"
-  }
-  ```
-- **Response (201 Created)**:
-  ```json
-  {
-    "success": true,
-    "statusCode": 201,
-    "message": "Gửi báo giá khảo sát thành công",
-    "data": {
-      "id": "quote-uuid-789",
-      "serviceOrderId": "order-uuid-456",
-      "laborCost": 150000,
-      "partsCost": 480000,
-      "totalAmount": 630000,
-      "status": "PENDING_APPROVAL"
-    }
-  }
-  ```
+Fields: `sku`, `name`, `description`, `sellingPrice`, `warrantyDays`,
+`warrantyPolicy`, `isActive`. Catalog query uses `page`, `limit`, `search`.
+Admin retains `service:manage`; catalog readers retain `service:read`.
+New FixHome cost items use IDs from `fixhome_parts` through `/parts/catalog`.
+Legacy `/parts` IDs are not accepted for new request-linked costs.
 
-### 2.2 Get Quotation by Order
-- **Method & Path**: `GET /quotations/order/:orderId`
-- **Roles**: `customer` (chủ đơn), `technician` (thợ phân công), `service_manager`, `admin`
+## 2. Parts Request API
 
-### 2.3 Customer Approve Quotation (Duyệt báo giá)
-- **Method & Path**: `POST /quotations/:id/approve`
-- **Roles**: `customer`
-- **Description**: Khách hàng đồng ý với mức giá khảo sát. Báo giá trở thành bất biến (`APPROVED`), đơn hàng được phép tiến hành sửa chữa (`UNDER_REPAIR`).
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/service-orders/:orderId/part-requests` | Assigned Technician; ACCEPTED order |
+| GET | `/service-orders/:orderId/part-requests` | Authorized order history |
+| GET | `/part-requests` | Admin/SM list; Technician restricted to own current assignments |
+| GET | `/part-requests/:id` | Authorized detail, including Customer ownership check |
+| PATCH | `/part-requests/:id/ready` | SM prepares and generates QR |
+| PATCH | `/part-requests/:id/delivering` | SM dispatches delivery |
+| PATCH | `/part-requests/:id/qr` | SM rotates unreceived QR |
+| POST | `/part-requests/:id/receive` | Assigned request owner submits `{ qrToken }` |
+| PATCH | `/part-requests/:id/items/:itemId/usage` | Assigned request owner submits `{ usageStatus: "used" or "returned" }` |
+| PATCH | `/part-requests/:id/cancel` | SM before receipt; Technician only REQUESTED; optional `{ reason }` |
 
-### 2.4 Customer Reject Quotation (Từ chối báo giá)
-- **Method & Path**: `POST /quotations/:id/reject`
-- **Roles**: `customer`
-- **Request Body**:
-  ```json
-  {
-    "reason": "Mức giá linh kiện ngoài quá cao so với dự kiến"
-  }
-  ```
+Create body: `items: [{ partCatalogId, quantity, note? }]`, optional
+`fulfillmentMethod: "pickup" | "delivery"` and `reason`. Backend snapshots
+active catalog name/price. No client price or final-total fields are accepted.
 
----
+List filters: `status`, `technicianId`, `serviceOrderId`, `requestType`,
+`fulfillmentMethod`, `createdFrom`, `createdTo`, `search`, `page`, `pageSize`.
+Dates are inclusive ISO timestamps. Search matches request/order/Technician IDs
+and item names. Default page size 20, maximum 100; `meta.total` counts all matches.
+Web filters execute on the server before pagination.
 
-## 3. Additional Costs Endpoints (Chi phí phát sinh D-11)
+## 3. States, QR and usage
 
-### 3.1 Request Additional Cost (Thợ gửi yêu cầu phát sinh)
-- **Method & Path**: `POST /quotations/:id/additional-costs`
-- **Roles**: `technician`
-- **Condition**: Đơn hàng đang ở trạng thái `UNDER_REPAIR`.
-- **Request Body**:
-  ```json
-  {
-    "additionalLabor": 50000,
-    "additionalParts": 100000,
-    "reason": "Phát hiện mối hàn dàn nóng bị rỉ sét cần gia cố thêm",
-    "supersedesId": null
-  }
-  ```
-- **Rule D-11**: Nếu khách từ chối và thợ đề xuất lại, trường `supersedesId` phải trỏ tới ID của yêu cầu phát sinh trước đó để tạo chuỗi lịch sử phiên bản bất biến.
+```text
+PICKUP:   REQUESTED -> READY -> RECEIVED -> COMPLETED
+DELIVERY: REQUESTED -> READY -> DELIVERING -> RECEIVED -> COMPLETED
+SM cancellation: REQUESTED / READY / DELIVERING -> CANCELLED
+Technician cancellation: REQUESTED -> CANCELLED
+```
 
-### 3.2 Customer Approve Additional Cost
-- **Method & Path**: `POST /quotations/additional-costs/:costId/approve`
-- **Roles**: `customer`
+Delivery cannot skip DELIVERING; terminal states cannot reopen. Service Order
+states remain separate. Order cancellation cascades to active requests; order
+completion closes received requests. Mutations lock the Service Order before
+the request; item relation reads do not lock nullable joins.
 
-### 3.3 Customer Reject Additional Cost
-- **Method & Path**: `POST /quotations/additional-costs/:costId/reject`
-- **Roles**: `customer`
-- **Request Body**:
-  ```json
-  {
-    "reason": "Không có nhu cầu thực hiện hạng mục gia cố thêm"
-  }
-  ```
+QR tokens are cryptographically random, expire after 48 hours and are cleared
+on receipt/cancellation. Only SM responses expose them. Technician/Customer
+must obtain the token at handover, not through their request read API.
+Web generates QR locally with `qrcode`, without sending tokens to a third party.
+SM can rotate a READY/DELIVERING QR, immediately invalidating the old token.
+
+Receipt validates active order/current assignment, request owner, fulfillment
+state, token and issue time in a transaction, preventing duplicate receipt.
+Item usage is `pending | used | returned`; updates cannot reset to PENDING.
+Usage requires RECEIVED and UNDER_REPAIR. Completion requires all active requests
+received and all items resolved. Completion request freezes usage with the invoice.
+
+## 4. Quotations, Additional Costs and billing
+
+Reuse existing quotation/additional-cost modules and approval records.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST/GET | `/service-orders/:id/quotations` | Create/read quotations |
+| GET | `/quotations/:id` | Authorized detail |
+| POST | `/quotations/:id/decision` | Customer APPROVE/REJECT |
+| POST/GET | `/service-orders/:id/additional-costs` | Create/read additional costs |
+| POST | `/additional-costs/:id/decision` | Customer APPROVE/REJECT |
+| POST | `/additional-costs/:id/revise` | Technician revision of non-approved cost |
+
+Cost items use `type`, `description`, `quantity`, `unitPrice`, `partSource`,
+`partCatalogId` as applicable. Decisions use `action` and optional
+`paidWarrantyItemIds`. Backend replaces FixHome price/name/warranty from the
+active catalog. Billable prices must be whole VND; null warranty means zero days.
+
+Additional approval and creation of its FixHome request share one transaction.
+Failures roll back approval/totals. Labor items never become part requests.
+Inactive parts or a no-longer-assigned Technician prevent request creation.
+
+Backend computes the final invoice from approved items capped by received USED
+quantities. RETURNED, PENDING, unreceived and unapproved FixHome quantities are
+not billed. Each quantity is consumed once: pre-repair quantities match quotation
+items; additional quantities match their own approved additional-cost ID.
+
+Approved shipping fee is immutable at dispatch and charged only for received
+delivery. `invoices.shipping_fee` is included in grand total/platform dues and
+excluded from labor commission. Pre-repair shipping is zero. Pickup or costs
+without FixHome parts cannot carry a shipping fee.
+
+## 5. Database and deployment
+
+Existing tables: `fixhome_parts`, `part_requests`, `part_request_items`,
+`quotations`, `quotation_items`, `additional_cost_requests`,
+`additional_cost_items`. Requests store order/Technician/type/fulfillment/status,
+timestamps and optional approved cost ID; items store catalog/name/price snapshots
+and usage status.
+
+Migration `1790000000006-PartRequestIntegrity.ts` adds order/Technician/preparer/
+cost FKs, item catalog FK, positive quantity and nonnegative price/fee checks,
+unique active pre-repair request per order, unique request per approved cost,
+creation-date index and invoice shipping fee. It fails on inconsistent historical
+rows instead of deleting data or rewriting financial history.
+Apply a reviewed TypeORM migration before running this Backend; never use
+production synchronization as a substitute.
+
+## 6. Known limitations
+
+- PostgreSQL migrations, concurrent HTTP flows, hosted CI and deployment are
+  NOT VERIFIED locally. See the audit report for executed checks.
+- QR tokens remain in a restricted database field until handover so SM can
+  display them again; they are not stored as hashes.
+- Historical issued invoices are preserved; no retroactive charge/refund rewrite.
+- Usage is per whole request item quantity; partial usage needs separate items.
+- EXTERNAL/Technician-sourced items retain existing quotation/warranty handling
+  and are outside FixHome QR request tracking.
+- Mobile was not edited or verified. Clients need `/parts/catalog` IDs for new
+  FixHome items and must obtain QR tokens from the handover operator.

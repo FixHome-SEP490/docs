@@ -133,3 +133,30 @@
     }
   }
   ```
+
+---
+
+## 5. Service Radius Configuration (Bán kính phục vụ)
+
+### 5.1 Cập nhật bán kính phục vụ
+- **Method & Path**: `PATCH /api/v1/technicians/me/profile`
+- **Roles**: `technician`
+- **Request Body**:
+  ```json
+  {
+    "serviceRadiusKm": 15
+  }
+  ```
+- **Description**: Kỹ thuật viên thiết lập bán kính hoạt động phục vụ tối đa (`service_radius_km` lưu trong `technician_profiles`). Thuật toán điều phối chỉ gửi lời mời việc nếu khoảng cách địa lý giữa địa chỉ thợ và nhà khách nằm trong bán kính này.
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "Cập nhật bán kính phục vụ thành công",
+    "data": {
+      "serviceRadiusKm": 15
+    }
+  }
+  ```
+
