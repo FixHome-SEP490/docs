@@ -1,21 +1,23 @@
 # FixHome — Current Tasks
 
-> Last updated: 2026-09-24 | Phase: Cloudinary Storage Migration, VNPay Integration, Public Tracking & Realtime Chat (Master Spec v2.1)
+> Last updated: 2026-09-25 | Phase: Notification Center, Evidence Gallery Suite & Parts Request Lifecycle (Master Spec v2.1)
 
 ---
 
 ## Current Phase
 
-**Feature Expansion, Storage Migration & Ecosystem Hardening Complete** — Aligned with **Master Project Specification v2.1**.
+**Notification Center, Evidence Suite & Ecosystem Hardening Complete** — Aligned with **Master Project Specification v2.1**.
 Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
-- **Cloudinary Authenticated Private Storage**: Migrated order evidence and private booking photo storage from Supabase to Cloudinary authenticated storage with time-limited signed URLs (`expires_at`, 5 minutes expiration) and magic-byte MIME validation.
-- **VNPay Payment Gateway Integration**: Added redirect payment URL generation (`POST /invoices/:id/vnpay-url`), cryptographic signature verification (HMAC-SHA512), IPN webhook and return URL auto-reconciliation, with automatic invoice and order completion.
+- **Customer Notification Bell & Center**: Header icon with unread badge, popover dropdown (All/Unread), auto mark read, polling 30s, full-page notification center (`/app/notifications`) with sender categorization (Technician, SM, Admin, System).
+- **Lifecycle Auto-dispatch Notifications**: Backend automatically sends notifications to customer when technician is en route (`TECHNICIAN_EN_ROUTE`), arrives (`TECHNICIAN_ARRIVED`), and requests completion (`COMPLETION_REQUESTED`).
+- **Role-Guarded Notifications API**: `POST /notifications` with `CreateNotificationDto` validation restricted to `ADMIN`, `SERVICE_MANAGER`, and `TECHNICIAN`.
+- **Order Evidence Gallery & Lightbox**: Customer order detail page displays categorized evidence photos (BEFORE, AFTER, ADDITIONAL) with technician notes, timestamp, and high-res lightbox modal zoom.
+- **Detailed Repair Itemization**: Itemized breakdown table showing labor items, replacement parts with warranty durations, approved additional costs, and a grand summary payment box.
+- **Parts Request Lifecycle v4.1**: 791 items parts catalog dataset, QR handover scanning with `TEST_SCAN` bypass for dev testing, item usage (used/returned) tracking.
+- **Cloudinary Authenticated Private Storage**: Authenticated storage with time-limited signed URLs (`expires_at`, 5 minutes expiration) and magic-byte MIME validation.
+- **VNPay Payment Gateway Integration**: Automated IPN webhook and return URL auto-reconciliation, with automatic invoice and order completion.
 - **Public Order Tracking**: Public tracking endpoint (`GET /orders/track?code=...&phone=...`) allowing customers to track order progress and technician live location on a real-time map without login.
-- **Technician Service Radius**: Technicians can configure operating radius (`service_radius_km`) from their base address, enforced in candidate discovery and invitation matching.
-- **Evidence Deletion**: Added repair evidence deletion (`DELETE /service-orders/:id/evidence/:evidenceId`) with Cloudinary object deletion.
-- **Real-time Chat Gateway**: WebSocket Socket.IO messaging gateway between Customer and Technician with mobile thread synchronization, handshake resilience, and auto-reconnect.
-- **Mobile Auth & KYC Hardening**: Split registration OTP and password reset flows, added photo reset button, and fixed iOS multi-part binary upload via `XMLHttpRequest`.
-- **Quality Gates**: **603 backend unit tests (77 suites)** and **323 web tests (37 suites)** passing (100% green), 0 lint errors, 0 typecheck errors, successful production builds.
+- **Quality Gates**: **623 backend unit tests (80 suites)** and **335 web tests (39 suites)** passing (100% green), 0 lint errors, 0 typecheck errors, successful production builds.
 
 ---
 
@@ -23,14 +25,14 @@ Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Backend | ✅ 603/603 unit tests pass (77 suites) | 0 lint w/e, 0 typecheck errors, Cloudinary private storage, VNPay integration |
-| Web | ✅ 323/323 unit tests pass (37 suites) | 32+ pages, public tracking live map, VNPay return polling, radius picker |
+| Backend | ✅ 623/623 unit tests pass (80 suites) | 0 lint w/e, 0 typecheck errors, Cloudinary private storage, VNPay, auto-dispatch notifs |
+| Web | ✅ 335/335 unit tests pass (39 suites) | 33+ pages, Notification Bell, Evidence Lightbox, Public tracking live map |
 | Mobile | ✅ Clean & Stable | Expo SDK 57, Realtime Chat Socket thread, separate auth OTP/reset screens |
 | AI Service | ✅ Adapter API & Advisory Stub | FastAPI service, CI pipeline (pytest, flake8, mypy), YOLO11s + RAG + Qwen2.5-VL |
-| Database | ✅ 32 Migrations Executed | PostgreSQL 16, deduplication & unique constraints, service radius |
+| Database | ✅ 33 Migrations Executed | PostgreSQL 16, deduplication, service radius, parts request integrity |
 | Storage | ✅ Cloudinary Private Authenticated | Signed access URLs (5-minute expiration), JPEG/PNG/WebP magic-byte validation |
 | Payments | ✅ VNPay + Cash Dual-Confirmation | Automated VNPay reconciliation + server-authoritative cash settlement |
-| Testing | ✅ Comprehensive (926 total tests) | 603 backend unit tests + 323 web tests passing (100% green) |
+| Testing | ✅ Comprehensive (958 total tests) | 623 backend unit tests + 335 web tests passing (100% green) |
 | Documentation | ✅ Up-to-date (v2.1) | Master Spec, API Changelog, Core Migrations, System Ecosystem synced |
 | CI / DevOps | ✅ Docker & independent CI | Dockerfiles + GitHub Actions CI workflows across all repos |
 
@@ -102,6 +104,21 @@ Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
 | **D3-06** | **Repair Evidence Deletion** | **COMPLETED** | `Backend: service-orders.controller.ts, order-evidence-storage.service.ts`<br>`Frontend: TechnicianJobDetailPage.vue` | **PASS** (`DELETE /service-orders/:id/evidence/:evidenceId` with Cloudinary object destroy) |
 | **D3-07** | **Realtime Chat Gateway & Mobile Sync** | **COMPLETED** | `Backend: messaging.module.ts, messaging.gateway.ts, messaging.controller.ts`<br>`Mobile: messages screen, chat thread composer, socket lifecycle`<br>`Frontend: ChatDrawer.vue` | **PASS** (WebSocket Socket.IO real-time thread, handshake resilience, auto-reconnect) |
 | **D3-08** | **Geo Post-2025 Units & Schedule Dedupe** | **COMPLETED** | `Backend: Migration 1790000000003-DedupeAndConstrainScheduleAndAddress.ts, geo.service.ts, seed-users.ts` | **PASS** (Vietnam post-2025 administrative units, unique constraints on schedules & addresses) |
+
+---
+
+## Dev 4 Notification Center & Evidence Suite Tasks (Completed 2026-09-25)
+
+| Task ID | Task Title | Status | Components Modified / Created | Verification |
+| :--- | :--- | :---: | :--- | :---: |
+| **D4-01** | **Customer Notification Bell & Dropdown** | **COMPLETED** | `Frontend: NotificationBellDropdown.vue, CustomerLayout.vue, notifications.store.ts` | **PASS** (Red badge unread count, ping animation, popover tabs Tất cả / Chưa đọc, auto mark read on click) |
+| **D4-02** | **Customer Notification Center Page** | **COMPLETED** | `Frontend: CustomerNotificationsPage.vue, router/index.ts, notifications.api.ts` | **PASS** (Route `/app/notifications`, search filter, categorization by Thợ / SM / Admin / System, unread toggle) |
+| **D4-03** | **Backend Notification Role-Guarded API** | **COMPLETED** | `Backend: notifications.controller.ts, CreateNotificationDto, roles.guard.ts` | **PASS** (`POST /notifications` restricted to ADMIN, SERVICE_MANAGER, TECHNICIAN with DTO validation) |
+| **D4-04** | **Auto-dispatch Order Lifecycle Notifications** | **COMPLETED** | `Backend: service-orders.service.ts, service-orders.module.ts` | **PASS** (Non-blocking notify on `TECHNICIAN_EN_ROUTE`, `TECHNICIAN_ARRIVED`, `COMPLETION_REQUESTED`) |
+| **D4-05** | **Evidence Gallery with Tabs & Notes** | **COMPLETED** | `Frontend: CustomerOrderDetailPage.vue, orders.api.ts`<br>`Backend: service-orders.controller.ts (getEvidence)` | **PASS** (Gallery tabs BEFORE/AFTER/ADDITIONAL, technician notes, timestamp display, 0 broken images) |
+| **D4-06** | **Lightbox Zoom Modal for Evidence Photos** | **COMPLETED** | `Frontend: CustomerOrderDetailPage.vue` | **PASS** (Full-screen backdrop blur modal, high-res zoom, evidence type badges, detailed notes) |
+| **D4-07** | **Detailed Repair Itemization Breakdown** | **COMPLETED** | `Frontend: CustomerOrderDetailPage.vue` | **PASS** (Labor items table, parts with warranty days, approved additional costs, grand summary box) |
+| **D4-08** | **Parts Catalog & Lifecycle Integration** | **COMPLETED** | `Backend: part-requests, seed runner, migration 33`<br>`Frontend: orders.api.ts, quotation flow` | **PASS** (791 items parts catalog dataset, TEST_SCAN token bypass for dev, QR handover lifecycle) |
 
 ---
 

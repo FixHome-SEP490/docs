@@ -10,17 +10,17 @@
 
 ---
 
-## Key Documents (Tài liệu Trọng tâm v2.0)
+## Key Documents (Tài liệu Trọng tâm v2.1)
 
 - [SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md](architecture/SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md) — **Kiến trúc Hệ thống & Cấu trúc Chi tiết Từng File (BE, FE, AI, Mobile)**
-- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) — **Single Source of Truth** (Đặc tả tổng quan kiến trúc & hệ thống v2.0)
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) — **Single Source of Truth** (Đặc tả tổng quan kiến trúc & hệ thống v2.1)
 - [Master Project Specification v1.4](docs/FIXHOME-Master-Project-Specification-v1.4.md) — Tài liệu nghiệp vụ & kỹ thuật chuẩn nhóm
 - [Dev 1 Implementation Plan v1.4](docs/FIXHOME-DEV1-IMPLEMENTATION-PLAN-v1.4.md) — Kế hoạch thực thi & bàn giao chi tiết của Dev 1
 - [Dev 1 Fix & Audit Report](docs/DEV1-FIX-REPORT.md) — Báo cáo nghiệm thu 24 task sửa lỗi, dọn dẹp Chat và kiểm thử Dev 1
 - [Full API Integration Report](docs/FULL-API-INTEGRATION-REPORT.md) — Báo cáo kiểm định tích hợp API toàn diện giữa Web, Mobile và Backend
 - [Final Integration Checklist](docs/FINAL-INTEGRATION-CHECKLIST.md) — Checklist chốt chặn kiểm thử trước demo
 - [API v1.4 Changelog](docs/API_V1_4_CHANGELOG.md) — Hợp đồng API v1.4 (Reschedule, Withdraw, Cash Dual-Confirmation, Notifications, Parts...)
-- [Database Migrations](database/CORE_SCHEMA_MIGRATIONS.md) — Quy chuẩn database, danh sách toàn bộ 32 migrations TypeORM trong PostgreSQL
+- [Database Migrations](database/CORE_SCHEMA_MIGRATIONS.md) — Quy chuẩn database, danh sách toàn bộ 33 migrations TypeORM trong PostgreSQL
 - [CURRENT_TASKS.md](CURRENT_TASKS.md) — Trạng thái dự án, danh sách task hoàn thành và backlog
 - [REPOSITORY_GUIDE.md](REPOSITORY_GUIDE.md) — Bản đồ repo và hướng dẫn setup local
 - [AGENTS.md](AGENTS.md) — Hướng dẫn cho AI coding agents
@@ -49,7 +49,7 @@
 ```text
 Web (Vue 3 + Vite) ────────┐
 (Customer, Tech & Console)  │
-                            ├──> NestJS Backend API ───> PostgreSQL 16 (32 Migrations)
+                            ├──> NestJS Backend API ───> PostgreSQL 16 (33 Migrations)
 Mobile (React Native Expo) ──┤    (State Machine D-22,   ├──> Cloudinary Authenticated Storage
 (Customer & Tech App)       │     VNPay + Cash Dual,     └──> WebSocket Realtime Chat Gateway
                             │     Zero Mock Data, 5-Layer Guards)
@@ -63,11 +63,11 @@ Mobile (React Native Expo) ──┤    (State Machine D-22,   ├──> Cloudi
 
 | Thành phần | Công nghệ chính | Trạng thái Chất lượng (Quality Gate) |
 | :--- | :--- | :--- |
-| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16, Cloudinary, VNPay | **603/603 unit tests pass** (77 suites), 0 lint error (`oxlint`), 0 type error, build dist pass |
-| **Web** | Vue 3, Vite, TailwindCSS, Pinia, TypeScript | **323/323 tests pass** (37 suites), 0 lint error, 0 type error, Vite build pass |
+| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16, Cloudinary, VNPay | **623/623 unit tests pass** (80 suites), 0 lint error (`oxlint`), 0 type error, build dist pass |
+| **Web** | Vue 3, Vite, TailwindCSS, Pinia, TypeScript | **335/335 tests pass** (39 suites), 0 lint error, 0 type error, Vite build pass |
 | **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | Auth OTP/Password reset split, Realtime Chat Socket thread, KYC upload resilience |
 | **AI Service** | FastAPI, Python 3.11, vLLM, YOLO11s, Qwen2.5-VL | 4-tier engine: Hội thoại -> Thị giác -> Tri thức (3.319 đoạn) -> Ngôn ngữ (CI tooling & governance) |
-| **Database** | PostgreSQL 16 (Docker) | **32 migrations** chạy trơn tru, unique constraint deduplication |
+| **Database** | PostgreSQL 16 (Docker) | **33 migrations** chạy trơn tru, unique constraint deduplication |
 | **Storage** | Cloudinary Private Authenticated Storage | Signed URLs có thời hạn (5 phút), whitelist JPEG/PNG/WebP magic bytes |
 
 ---

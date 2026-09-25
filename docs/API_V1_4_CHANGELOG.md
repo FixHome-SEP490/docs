@@ -407,3 +407,47 @@
 - `chat:received`: Broadcast tin nhắn tức thì tới các thành viên trong phòng.
 - `chat:read`: Đánh dấu đã đọc tin nhắn trong phòng.
 
+---
+
+## 5. v1.4.1 — Notification Bell & Evidence Gallery (2026-09-25)
+
+### 5.1 Customer Notification Bell (Icon Chuông Thông Báo)
+
+#### Backend — Auto-dispatch Notifications
+- `ServiceOrdersService` tự động gửi notification đến khách hàng khi đơn hàng chuyển trạng thái:
+  - `TECHNICIAN_EN_ROUTE` — Khi thợ bắt đầu di chuyển (`enRoute()`)
+  - `TECHNICIAN_ARRIVED` — Khi thợ check-in GPS thành công (`checkIn()` VALID)
+  - `COMPLETION_REQUESTED` — Khi thợ yêu cầu nghiệm thu (`requestCompletion()`)
+- Notification dispatch là **non-blocking** (`void` + try/catch): không ảnh hưởng luồng nghiệp vụ chính.
+- `NotificationsService` inject `@Optional()` trong `ServiceOrdersService` để hỗ trợ module independence.
+
+#### Backend — New Endpoints
+- `POST /notifications` — Roles: `ADMIN`, `SERVICE_MANAGER`, `TECHNICIAN` — Gửi thông báo đến user cụ thể.
+- DTO: `CreateNotificationDto` — validate `userId` (UUID), `title`, `message` (string required), `type`, `referenceId`, `referenceType` (optional).
+
+#### Backend — Module Integration
+- `ServiceOrdersModule` import `NotificationsModule` để inject `NotificationsService`.
+
+#### Frontend — NotificationBellDropdown Component
+- Tích hợp vào `CustomerLayout.vue` header (bên phải nút "Đặt thợ ngay").
+- Badge đỏ hiển thị số chưa đọc (tối đa `99+`) với ping animation.
+- Dropdown popover: tabs Tất cả / Chưa đọc, click → đánh dấu đã đọc + điều hướng.
+- Polling 30s qua Pinia store (`notifications.store.ts`), chỉ khi tab visible + user authenticated.
+
+#### Frontend — CustomerNotificationsPage
+- Route: `/app/notifications` — Trang trung tâm thông báo đầy đủ.
+- Tìm kiếm, lọc theo danh mục (Kỹ thuật viên / SM / Admin), toggle chưa đọc.
+- Phân loại tự động dựa trên `type` và keywords trong `title`/`message`.
+
+#### Frontend — Notifications API Layer
+- `notifications.api.ts`: wrapper axios cho 4 endpoints (GET list, GET unread-count, PATCH read, PATCH read-all).
+- `getNotificationCategory()`: utility phân loại nguồn thông báo (Technician / SM / Admin / System).
+
+### 5.2 Customer Order Detail — Evidence Gallery (Ảnh Trước & Sau Sửa Chữa)
+
+#### Tính năng mới trong CustomerOrderDetailPage
+- Hiển thị **gallery ảnh bằng chứng sửa chữa** với tabs lọc: Tất cả / Trước khi sửa (BEFORE) / Sau khi sửa (AFTER) / Bổ sung (ADDITIONAL).
+- Mỗi ảnh kèm **ghi chú của thợ** (nếu có) và thời gian chụp.
+- **Lightbox zoom modal**: click vào ảnh để phóng to xem chi tiết, hiển thị badge loại ảnh và ghi chú.
+- Liệt kê danh sách chi tiết sửa chữa từ quotation items và additional cost items.
+
