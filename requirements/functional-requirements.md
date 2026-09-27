@@ -56,3 +56,39 @@
 ## FR-12: Đánh giá & Phản hồi (Reviews & Ratings - D-09)
 - Khách hàng đánh giá sao (1-5) và nhận xét dịch vụ sau khi hoàn tất.
 - Ràng buộc duy nhất 1 lượt đánh giá trên mỗi đơn hàng; tự động tính lại điểm trung bình cho thợ.
+
+## FR-13: Thư viện Bằng chứng Ảnh & Lightbox Phóng to (Evidence Gallery & Lightbox Viewer)
+- Hiển thị toàn bộ ảnh chụp hiện trạng thiết bị của đơn hàng theo 4 tab lọc: Tất cả, Trước khi sửa (`BEFORE`), Sau khi hoàn thành (`AFTER`), Ảnh chi tiết phát sinh (`ADDITIONAL`).
+- Hiển thị ghi chú giải thích của kỹ thuật viên và mốc thời gian chụp ảnh thực tế.
+- Hộp thoại Lightbox Modal: bấm vào ảnh bất kỳ để phóng to độ phân giải cao, hiển thị huy hiệu loại ảnh và ghi chú đầy đủ.
+
+## FR-14: Bóc Tách Chi Tiết Hạng Mục Đơn Sửa Chữa (Detailed Repair Itemization)
+- Bảng danh mục bóc tách minh bạch công việc:
+  1. Hạng mục công việc & nhân công sửa chữa (Labor items).
+  2. Linh kiện thay thế (Parts items) kèm số lượng, đơn giá và thời hạn bảo hành từng món (`warrantyDays` ngày hoặc theo chuẩn nhà sản xuất).
+  3. Chi phí phát sinh đã được khách hàng phê duyệt (Approved Additional Costs).
+- Khối tổng kết thanh toán trực quan (Grand Summary Box) phân định rõ tổng tiền công và tiền linh kiện, hiển thị trạng thái thanh toán (`PAID` / `PENDING`).
+
+## FR-15: Trung Tâm Thông Báo & Chuông Thông Báo Khách Hàng (Customer Notification Bell & Center)
+- Icon chuông thông báo trên thanh tiêu đề khách hàng (`CustomerLayout.vue`) với badge số đỏ hiển thị lượng tin chưa đọc (tối đa 99+) kèm hiệu ứng động (ping).
+- Popover dropdown nhanh với hai tab "Tất cả" và "Chưa đọc", click vào thông báo tự động đánh dấu đã đọc và điều hướng đến chi tiết đơn hàng hoặc đối tượng liên quan.
+- Polling ngầm mỗi 30 giây qua Pinia store (`notifications.store.ts`), chỉ kích hoạt khi tab đang hiển thị và người dùng đã xác thực.
+- Trang Trung tâm Thông báo toàn diện (`/app/notifications`) hỗ trợ tìm kiếm theo từ khóa, lọc theo nguồn gửi (Kỹ thuật viên / Service Manager / Admin / Hệ thống) và toggle tin chưa đọc.
+- Cơ chế tự động gửi thông báo từ backend (Auto-dispatch) khi:
+  - Thợ bắt đầu di chuyển (`TECHNICIAN_EN_ROUTE`).
+  - Thợ check-in GPS đến nơi thành công (`TECHNICIAN_ARRIVED`).
+  - Thợ tải ảnh xong và gửi yêu cầu nghiệm thu (`COMPLETION_REQUESTED`).
+
+## FR-16: Tra Cứu Đơn Hàng Công Khai (Public Order Tracking & Live Map)
+- Khách hàng vãng lai tra cứu tiến độ đơn hàng và vị trí GPS của thợ di chuyển theo thời gian thực mà không cần đăng nhập (`POST /service-orders/public/track`).
+- Hiển thị bản đồ trực tiếp (Live Map) với lộ trình di chuyển của kỹ thuật viên khi đơn ở trạng thái `EN_ROUTE`.
+
+## FR-17: Cổng Thanh Toán Trực Tuyến VNPay (VNPay Payment Gateway)
+- Khởi tạo URL chuyển hướng thanh toán VNPay (`POST /invoices/:id/vnpay-url`).
+- Xác minh chữ ký mật mã HMAC-SHA512, tự động xử lý IPN webhook và return URL callback, cập nhật hóa đơn sang `PAID` và hoàn tất đơn hàng.
+- Kết hợp song song cùng phương thức Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation).
+
+## FR-18: Quản Trị Vòng Đời Yêu Cầu Linh Kiện FixHome (Parts Request Lifecycle & QR Handover)
+- Quản lý danh mục linh kiện chính hãng FixHome (FixHome Parts Catalog) với 791 mặt hàng, thông số, giá niêm yết và chính sách bảo hành.
+- Quy trình yêu cầu linh kiện (Parts Request Flow): Thợ đề xuất -> Service Manager chuẩn bị linh kiện và xuất mã QR -> Bàn giao quét mã QR (`qrToken`) -> Cập nhật trạng thái sử dụng (`USED` hoặc `RETURNED`).
+- Tự động quyết toán linh kiện khi đơn hàng hoàn tất hoặc đóng yêu cầu linh kiện khi đơn bị hủy.

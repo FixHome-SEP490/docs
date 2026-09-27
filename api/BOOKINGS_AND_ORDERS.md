@@ -206,7 +206,77 @@
   ```
 
 ### 3.10 Public Order Tracking (Tra cứu tiến độ đơn không cần đăng nhập)
-- **Method & Path**: `GET /orders/track?code=:orderCode&phone=:customerPhone`
-- **Roles**: Public (Không cần JWT)
+- **Method & Path**: `POST /service-orders/public/track` (hoặc `GET /orders/track?code=:orderCode&phone=:customerPhone`)
+- **Roles**: Public (Không cần JWT, rate-limited qua ThrottlerGuard 5 req/min)
 - **Description**: Cho phép tra cứu tiến độ đơn hàng và vị trí GPS của thợ di chuyển theo thời gian thực dựa trên mã đơn và số điện thoại khách hàng.
+
+### 3.11 Get Repair Evidence Photos (Lấy danh sách ảnh bằng chứng sửa chữa)
+- **Method & Path**: `GET /service-orders/:id/evidence`
+- **Roles**: All authenticated roles (`customer`, `technician`, `service_manager`, `admin` liên quan đến đơn)
+- **Description**: Trả về toàn bộ danh sách ảnh bằng chứng sửa chữa đã được tải lên cho đơn hàng (hỗ trợ phân loại `BEFORE`, `AFTER`, `ADDITIONAL`), kèm đường dẫn ảnh bảo mật (Cloudinary Authenticated Signed URL, thời hạn 5 phút), ghi chú của thợ và mốc thời gian chụp (`capturedAt`).
+- **Response (200 OK)**:
+  ```json
+  {
+    "data": [
+      {
+        "id": "evidence-uuid-001",
+        "serviceOrderId": "order-uuid-456",
+        "type": "before",
+        "mediaUrl": "https://res.cloudinary.com/demo/image/upload/s--signed--/evidence/before-1.jpg",
+        "note": "Ống đồng điều hòa bị rò rỉ gas và bám tuyết dày",
+        "capturedAt": "2026-09-25T08:15:00.000Z",
+        "createdAt": "2026-09-25T08:15:30.000Z"
+      },
+      {
+        "id": "evidence-uuid-002",
+        "serviceOrderId": "order-uuid-456",
+        "type": "after",
+        "mediaUrl": "https://res.cloudinary.com/demo/image/upload/s--signed--/evidence/after-1.jpg",
+        "note": "Đã hàn kín ống đồng, nạp gas R32 đủ áp suất 150 PSI, máy chạy êm",
+        "capturedAt": "2026-09-25T09:40:00.000Z",
+        "createdAt": "2026-09-25T09:41:00.000Z"
+      }
+    ]
+  }
+  ```
+
+### 3.12 Start Repair (Bắt đầu sửa chữa)
+- **Method & Path**: `POST /service-orders/:id/start-repair`
+- **Roles**: `technician` (thợ được phân công)
+- **Condition**: Thợ đã check-in GPS hợp lệ (`result: VALID`) và đã tải lên ít nhất 1 ảnh bằng chứng `BEFORE`.
+- **Valid Transition**: `EN_ROUTE -> UNDER_REPAIR`
+- **Response (200 OK)**:
+  ```json
+  {
+    "data": {
+      "id": "order-uuid-456",
+      "status": "UNDER_REPAIR",
+      "updatedAt": "2026-09-25T08:20:00.000Z"
+    }
+  }
+  ```
+
+### 3.13 Tự động Gửi Thông Báo (Auto-dispatch Notifications on Lifecycle Events)
+Trong quá trình xử lý đơn hàng, `ServiceOrdersService` tự động kích hoạt gửi in-app notification đến Khách hàng tại 3 mốc chuyển giao then chốt:
+1. **Thợ bắt đầu di chuyển (`enRoute`)**:
+   - `type`: `TECHNICIAN_EN_ROUTE`
+   - `title`: "Kỹ thuật viên đang di chuyển"
+   - `message`: "Kỹ thuật viên đang trên đường đến địa chỉ của bạn cho đơn hàng #ORD-..."
+2. **Thợ đến nơi & Check-in GPS thành công (`checkIn` với `result: VALID`)**:
+   - `type`: `TECHNICIAN_ARRIVED`
+   - `title`: "Kỹ thuật viên đã đến nơi"
+   - `message`: "Kỹ thuật viên đã có mặt tại điểm hẹn cho đơn hàng #ORD-... và bắt đầu kiểm tra thiết bị."
+3. **Thợ gửi yêu cầu nghiệm thu (`requestCompletion`)**:
+   - `type`: `COMPLETION_REQUESTED`
+   - `title`: "Yêu cầu nghiệm thu dịch vụ"
+   - `message`: "Kỹ thuật viên đã hoàn thành công việc cho đơn #ORD-... và tải ảnh nghiệm thu. Vui lòng kiểm tra và xác nhận nghiệm thu."
+
+> **Ghi chú kỹ thuật**: Cơ chế gửi thông báo là **non-blocking** (`void this.notifyCustomerForOrder(...)` bọc trong `try / catch`), bảo đảm sự cố gửi thông báo không làm gián đoạn hoặc rollback giao dịch nghiệp vụ cốt lõi của đơn hàng.
+
+### 3.14 Cấu trúc Bóc Tách Chi Tiết Sửa Chữa (Order Detail Repair Itemization)
+Khi gọi `GET /service-orders/:id`, giao diện khách hàng hiển thị cấu trúc bóc tách minh bạch (Detailed Repair Breakdown):
+1. **Hạng mục công việc (Labor Items)**: Trích xuất từ báo giá ban đầu (`quotation.items` với `type = 'labor'`).
+2. **Linh kiện thay thế (Parts Items)**: Trích xuất từ `quotation.items` với `type = 'part'`, hiển thị rõ số lượng, đơn giá, thời hạn bảo hành (`warrantyDays` ngày hoặc theo tiêu chuẩn nhà sản xuất).
+3. **Chi phí phát sinh đã duyệt (Approved Additional Costs)**: Liệt kê các chi phí phát sinh bổ sung do thợ đề xuất đã được khách hàng chấp thuận, kèm lý do và số tiền bổ sung.
+4. **Khối tổng kết thanh toán (Grand Summary)**: Phân tách rõ ràng giữa `laborTotal` (tiền công) và `partsTotal` (tiền linh kiện), kèm trạng thái thanh toán (`PAID` / `PENDING`).
 

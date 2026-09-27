@@ -1,7 +1,7 @@
 # FixHome — Hệ Sinh Thái Toàn Diện & Cấu Trúc Chi Tiết Từng File (BE, FE, AI, Mobile)
 
 > **Tài liệu đặc tả kiến trúc và cấu trúc mã nguồn toàn diện cho đồ án tốt nghiệp SEP490**  
-> **Phiên bản:** Master Architecture Specification v2.0 (Đồng bộ commit mới nhất: Backend `14520d8`, Frontend `15742ba`)  
+> **Phiên bản:** Master Architecture Specification v2.1 (Cập nhật: 2026-09-25 — Notification Bell, Evidence Gallery, Auto-dispatch Notifications)  
 > **Các phân hệ trong hệ sinh thái:**
 > 1. `Backend-FixHome` (Core API, Business Logic, State Machine, PostgreSQL, NestJS)
 > 2. `Frontend-FixHome` (Multi-portal Web Application, Vue 3, Vite, TailwindCSS)
@@ -290,8 +290,12 @@ Backend-FixHome/src/
 │   │   ├── ai-diagnosis.service.ts   # Gọi HTTP sang AI-FixHome, fallback tự động nếu AI down
 │   │   └── entities/ai-diagnosis.entity.ts # Lưu kết quả dự đoán bệnh, gợi ý giá, độ tin cậy
 │   │
-│   ├── notifications/                # Thông báo trong ứng dụng
-│   │   └── notifications.service.ts  # Tạo thông báo đổi trạng thái đơn, đánh dấu đã đọc
+│   ├── notifications/                # Thông báo trong ứng dụng (Mới: auto-dispatch + bell icon)
+│   │   ├── notifications.controller.ts    # GET /notifications, GET /unread-count, POST (send), PATCH /:id/read, PATCH /read-all
+│   │   ├── notifications.service.ts       # Tạo thông báo, đếm chưa đọc, đánh dấu đã đọc, markAll
+│   │   ├── dto/create-notification.dto.ts # DTO validation: userId, title, message, type, referenceId, referenceType
+│   │   └── entities/notification.entity.ts# userId, title, message, type, referenceId, referenceType, isRead (indexes: userId, userId+isRead)
+│   │
 │   ├── mail/                         # Dịch vụ gửi email OTP qua SMTP
 │   ├── health/                       # Endpoint giám sát uptime liveness/readiness
 │   ├── geo/                          # Tiện ích tính khoảng cách Haversine và tra cứu tọa độ
@@ -328,20 +332,38 @@ Frontend-FixHome/src/
 │   ├── client.ts                     # Cấu hình Axios instance, Base URL, JWT Interceptors & Refresh Loop
 │   ├── auth.api.ts                   # Đăng ký, đăng nhập, nạp OTP, đổi mật khẩu
 │   ├── bookings.api.ts               # Tạo booking, lấy candidates, nộp shortlist, đổi lịch hẹn
-│   ├── orders.api.ts                 # Chuyển trạng thái đơn, GPS check-in, upload ảnh before/after
-│   ├── quotations.api.ts             # Thợ lập báo giá, khách duyệt báo giá/phát sinh
+│   ├── orders.api.ts                 # Chuyển trạng thái đơn, GPS check-in, upload ảnh before/after, getEvidence
+│   ├── notifications.api.ts          # (Mới) Wrapper thông báo: getMyNotifications, getUnreadCount, markAsRead, markAllAsRead, getNotificationCategory()
 │   ├── reviews.api.ts                # Gửi đánh giá thợ 1-5 sao kèm nhận xét
+│   ├── messaging.api.ts              # REST API lấy lịch sử tin nhắn & hội thoại
 │   ├── support-cases.api.ts          # Mở yêu cầu khiếu nại, gửi phản hồi
+│   ├── catalog.api.ts                # Tra cứu danh mục dịch vụ & ngành nghề
 │   ├── technician-profile.api.ts     # Cập nhật thông tin thợ, quản lý danh mục kỹ năng, lịch làm
+│   ├── technician-verification.api.ts# Nộp & quản lý hồ sơ KYC kỹ thuật viên
+│   ├── ai.api.ts                     # Giao tiếp AI Diagnosis Service (chẩn đoán ảnh/mô tả)
+│   ├── media.api.ts                  # Upload media, ảnh đặt lịch, ảnh bằng chứng
+│   ├── geo.api.ts                    # Tra cứu tọa độ, danh mục địa giới hành chính
+│   ├── profile.api.ts                # Cập nhật hồ sơ cá nhân & sổ địa chỉ
+│   ├── part-requests.api.ts          # Yêu cầu linh kiện sửa chữa
+│   ├── parts-catalog.api.ts          # Tra cứu danh mục linh kiện chính hãng FixHome
+│   ├── console-order-context.api.ts  # Lấy ngữ cảnh đơn hàng dưới góc nhìn Console
 │   ├── admin-skill-verifications.api.ts # API Admin duyệt chứng chỉ chuyên môn của thợ
 │   ├── admin-users.api.ts            # Quản trị viên quản lý tài khoản & Onboard thợ mới
+│   ├── admin-verifications.api.ts    # Admin quản lý hồ sơ KYC kỹ thuật viên
+│   ├── admin-parts.api.ts            # Admin quản lý danh mục linh kiện chính hãng
+│   ├── admin-config.api.ts           # Admin quản lý cấu hình hệ thống (Config Registry)
+│   ├── admin-audit-logs.api.ts       # Admin xem nhật ký kiểm toán bất biến
+│   ├── admin-platform-dues.api.ts    # Admin theo dõi công nợ hoa hồng thợ
 │   ├── dashboard.api.ts              # Lấy số liệu thống kê Dashboard Console
 │   └── service-areas.api.ts          # Danh sách địa bàn phục vụ quận/huyện
 │
 ├── layouts/                          # Các khung giao diện chính theo Actor
-│   ├── CustomerLayout.vue            # Header khách hàng, giỏ đơn, thông báo, bottom nav mobile
+│   ├── CustomerLayout.vue            # Header khách hàng (+ NotificationBellDropdown), CTA "Đặt thợ ngay", avatar menu
 │   ├── TechnicianLayout.vue          # Thanh trạng thái thợ (Bận/Rảnh), menu nhận việc, thu nhập
-│   └── ConsoleLayout.vue             # Sidebar quản trị dành cho Service Manager & Admin
+│   ├── ConsoleLayout.vue             # Sidebar quản trị dành cho Service Manager & Admin
+│   ├── AdminLayout.vue               # Layout riêng cho trang Admin (mở rộng Console)
+│   ├── AuthLayout.vue                # Layout đăng nhập/đăng ký (minimal header)
+│   └── PublicLayout.vue              # Layout trang công khai (LandingPage, Services, Pricing)
 │
 ├── pages/                            # Toàn bộ màn hình chức năng của hệ thống
 │   ├── public/                       # Dành cho khách vãng lai
@@ -365,7 +387,8 @@ Frontend-FixHome/src/
 │   │   ├── BookingCandidatesPage.vue # Khám phá danh sách thợ đủ điều kiện & chọn Shortlist
 │   │   ├── BookingDetailPage.vue     # Chi tiết lịch hẹn, hỗ trợ khách chủ động đổi giờ (Reschedule)
 │   │   ├── CustomerOrdersPage.vue    # Danh sách các đơn dịch vụ đã và đang thực hiện
-│   │   ├── CustomerOrderDetailPage.vue # Chi tiết đơn: duyệt báo giá, xem ảnh before/after, nghiệm thu
+│   │   ├── CustomerOrderDetailPage.vue # Chi tiết đơn: duyệt báo giá, xem ảnh before/after (Gallery + Lightbox), nghiệm thu, ghi chú thợ
+│   │   ├── CustomerNotificationsPage.vue # (Mới) Trung tâm thông báo: tìm kiếm, lọc theo Thợ/SM/Admin, toggle chưa đọc
 │   │   ├── CustomerProfilePage.vue   # Quản lý thông tin cá nhân & sổ địa chỉ nhà riêng
 │   │   ├── CustomerWarrantiesPage.vue# Quản lý phiếu bảo hành chính hãng và bảo hành thợ
 │   │   └── CustomerHistoryPage.vue   # Lịch sử bảo trì thiết bị trong nhà
@@ -404,18 +427,23 @@ Frontend-FixHome/src/
 │       └── MessagesPage.vue          # Màn hình chat trực tuyến giữa Khách hàng và Kỹ thuật viên
 │
 ├── stores/                           # Pinia State Management
+│   ├── auth.ts                       # Legacy auth store (forward compatible)
 │   ├── auth.store.ts                 # Quản lý access token, thông tin user hiện tại, đăng xuất
-│   ├── booking.store.ts              # Quản lý state luồng đặt lịch 5 bước
-│   ├── orders.store.ts               # Quản lý danh sách đơn hàng và bộ lọc
-│   └── theme.store.ts                # Chế độ giao diện sáng/tối
+│   ├── chat.store.ts                 # Quản lý kết nối Socket.IO chat, tin nhắn, đếm unread
+│   ├── notifications.store.ts        # (Mới) Quản lý thông báo: polling 30s, fetchUnreadCount, markAsRead/All
+│   └── index.ts                      # Re-export tổng hợp stores
 │
-├── router/index.ts                   # Cấu hình Vue Router, Meta Auth, RBAC Guards chặn truy cập trái phép
+├── router/index.ts                   # Cấu hình Vue Router (~390 routes), Meta Auth, RBAC Guards, lazy-load pages
 ├── components/                       # Bộ thư viện UI tái sử dụng
-│   ├── FhCard.vue                    # Khung thẻ hiển thị chuẩn
-│   ├── FhModal.vue                   # Hộp thoại modal tương tác
-│   ├── FhBadge.vue                   # Huy hiệu hiển thị trạng thái đơn
-│   └── common/                       # Các component con chuyên biệt
-└── utils/                            # Tiện ích định dạng tiền tệ VNĐ, ngày tháng, geocoding
+│   ├── common/                       # FhCard, FhModal, FhBadge, FhButton, FhStatusPill, FhMoney, FhTimeline, MapTilerMap, ...
+│   ├── chat/                         # ChatFloatingWidget, AiAssistantWidget — widget chat nổi toàn trang
+│   └── notifications/                # (Mới) Thông báo
+│       └── NotificationBellDropdown.vue # Icon chuông + dropdown popover: badge đỏ, tabs Tất cả/Chưa đọc, click → điều hướng
+│
+├── tests/                            # Vitest unit/integration tests
+│   └── notifications.spec.ts         # (Mới) 4 test cases: phân loại danh mục + store markAsRead/markAllAsRead
+│
+└── utils/                            # Tiện ích định dạng tiền tệ VNĐ, ngày tháng, geocoding, quotation-decision
 ```
 
 ---

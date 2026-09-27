@@ -5,7 +5,7 @@
 # FixHome — Project Documentation
 
 > **Single Source of Truth** for the FixHome Capstone Project.  
-> Last updated: 2026-09-20 | Status: **Master Project Specification v2.0 & Full 4-Stack Ecosystem (BE, FE, AI, Mobile) Active**  
+> Last updated: 2026-09-25 | Status: **Master Project Specification v2.1 & Full 4-Stack Ecosystem (BE, FE, AI, Mobile) Active**  
 > Chi tiết cấu trúc từng file và sơ đồ kiến trúc: [SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md](architecture/SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md)
 
 ---
@@ -71,7 +71,8 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 - **Báo giá & Phát sinh:** Báo giá khảo sát thực tế, khách duyệt/từ chối; chi phí phát sinh D-11 bất biến có liên kết phiên bản `supersedesId` và đính kèm ảnh bằng chứng hư hại thực tế.
 - **Bảo mật Tài chính & Thu công nợ:** Máy chủ làm thẩm quyền duy nhất xác thực thanh toán (`isOrderPaymentSatisfied`), tự động trích nợ hoa hồng PlatformDue (chặn điều phối thợ nếu nợ quá hạn).
 - **Tiến trình đơn động (Real Timeline):** Đồng bộ trực tiếp từ `OrderStatusHistory`.
-- **Module Thông báo & Tin nhắn thời gian thực:** WebSocket Gateway Socket.IO phục vụ chat giữa Khách hàng và Kỹ thuật viên khi đơn đang hoạt động; hỗ trợ đồng bộ luồng chat trên ứng dụng di động với cơ chế tự phục hồi kết nối.
+- **Module Thông báo & Tin nhắn thời gian thực:** WebSocket Gateway Socket.IO phục vụ chat giữa Khách hàng và Kỹ thuật viên khi đơn đang hoạt động; hỗ trợ đồng bộ luồng chat trên ứng dụng di động với cơ chế tự phục hồi kết nối. **Icon Chuông Thông Báo (Notification Bell)** trên giao diện Customer với badge đỏ hiển thị số chưa đọc, tự động nhận thông báo khi thợ di chuyển, thợ đến nơi, yêu cầu nghiệm thu (auto-dispatch từ `ServiceOrdersService`); polling 30s qua Pinia store. Trang Trung tâm Thông báo (`/app/notifications`) với lọc theo danh mục người gửi (Thợ / SM / Admin), tìm kiếm và toggle chưa đọc.
+- **Gallery Ảnh Bằng Chứng Sửa Chữa:** Trang chi tiết đơn hàng (`CustomerOrderDetailPage`) hiển thị gallery ảnh trước/sau khi sửa chữa với tabs lọc (BEFORE / AFTER / ADDITIONAL), ghi chú của thợ, lightbox zoom modal và danh sách liệt kê chi tiết sửa chữa.
 - **Responsive Web & Mobile App:** Giao diện Vue 3 Responsive trên Web và ứng dụng di động React Native / Expo 57 trên iOS/Android.
 - **Đánh giá & Bảo hành:** Đánh giá thợ D-09 (duy nhất 1 lần/đơn), tạo yêu cầu bảo hành và quản lý phiếu bảo hành.
 
@@ -122,6 +123,9 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 | 34 | VNPay Payment Gateway | ✅ URL generation, HMAC-SHA512, IPN & return auto-complete | ✅ VNPay return polling & redirect | — | **COMPLETED** |
 | 35 | Public Order Tracking | ✅ Public endpoint `/orders/track` by code & phone | ✅ Public tracking page & live map | — | **COMPLETED** |
 | 36 | Technician Service Radius | ✅ `service_radius_km` on profile & candidate matching | ✅ Radius slider/picker in Tech Profile | — | **COMPLETED** |
+| 37 | Customer Notification Center | ✅ Auto-dispatch notifications, `POST /notifications` role guard | ✅ Notification bell badge & dropdown, `/app/notifications` page | ✅ Notifications screen | **COMPLETED** |
+| 38 | Order Evidence Gallery & Lightbox | ✅ `GET /service-orders/:id/evidence`, Cloudinary signed URLs | ✅ Evidence tabs (BEFORE/AFTER/ADDITIONAL), notes, lightbox zoom modal | ✅ Image picker/preview | **COMPLETED** |
+| 39 | Parts Request & Lifecycle v4.1 | ✅ Part request flow, QR handover, TEST_SCAN bypass, usage resolution | ✅ SM parts handover, Tech additional cost request integration | — | **COMPLETED** |
 
 ---
 
@@ -195,7 +199,7 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 
 ## 9. Database Migrations History
 
-Toàn bộ **32 migrations** đã được thực thi và kiểm thử tính toàn vẹn trên PostgreSQL 16:
+Toàn bộ **33 migrations** được quản lý chặt chẽ qua TypeORM trên PostgreSQL 16:
 
 1. `1725888000000-InitialBaseline.ts` (Users, Roles, RefreshTokens)
 2. `1725889000000-ServiceCatalogAndVerification.ts` (Categories, Services, KYC)
@@ -228,6 +232,8 @@ Toàn bộ **32 migrations** đã được thực thi và kiểm thử tính to�
 29. `1790000000002-BookingInvitationGroups.ts` (Invitation candidate groupings)
 30. `1790000000003-DedupeAndConstrainScheduleAndAddress.ts` (Deduplication & unique constraints)
 31. `1790000000004-TechnicianServiceRadius.ts` (Technician service radius `service_radius_km`)
+32. `1790000000005-PartRequestsAndLifecycle.ts` (Parts requests, items, fulfillment, QR handover và USED/RETURNED lifecycle)
+33. `1790000000006-PartRequestIntegrity.ts` (FK/check/unique constraints cho Parts, chỉ mục ngày tạo và `invoices.shipping_fee`)
 
 ---
 
@@ -236,12 +242,12 @@ Toàn bộ **32 migrations** đã được thực thi và kiểm thử tính to�
 - **Backend (NestJS):**
   - Typecheck: `tsc --noEmit` -> **0 errors**
   - Lint: `oxlint` -> **0 warnings, 0 errors**
-  - Unit Tests: `vitest run` -> **77/77 test suites passed, 603/603 tests passed (100% green)**
+  - Unit Tests: `vitest run` -> **80/80 test suites passed, 623/623 tests passed (100% green)**
   - Build: `nest build` -> **PASS**
 - **Web Frontend (Vue 3):**
   - Typecheck: `vue-tsc -b` -> **0 errors**
   - Lint: `eslint .` -> **0 warnings, 0 errors**
-  - Unit Tests: `vitest run` -> **37/37 test files passed, 323/323 tests passed (100% green)**
+  - Unit Tests: `vitest run` -> **39/39 test files passed, 335/335 tests passed (100% green)**
   - Build: `vite build` -> **PASS** (~4.5s)
   - Storage Isolation: `vi.clearAllMocks()` bảo đảm độc lập tuyệt đối giữa các test suite
 - **Data Integrity:**
