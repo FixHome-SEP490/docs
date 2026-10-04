@@ -5,7 +5,8 @@
 # FixHome — Project Documentation
 
 > **Single Source of Truth** for the FixHome Capstone Project.  
-> Last updated: 2026-09-25 | Status: **Master Project Specification v2.1 & Full 4-Stack Ecosystem (BE, FE, AI, Mobile) Active**  
+> Last updated: 2026-10-04 | Status: **Master Project Specification v2.2 & Full 4-Stack Ecosystem (BE, FE, AI, Mobile) Active**  
+
 > Chi tiết cấu trúc từng file và sơ đồ kiến trúc: [SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md](architecture/SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md)
 
 ---
@@ -48,16 +49,16 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 ## 5. Project Scope
 
 ### 5.1 In Scope (Phạm vi hiện tại — Spec v2.1)
-- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC) với phân định rõ rệt quyền Quản trị (Admin) và Vận hành hỗ trợ (Service Manager). Phân tách luồng OTP đăng ký và quên mật khẩu trên Mobile.
+- **Danh tính & Xác thực:** Đăng ký, đăng nhập JWT dual-token (Access Token 15m / Refresh Token 7d), xoay vòng refresh token với mã băm SHA-256 trong PostgreSQL, thu hồi phiên tức thì, phân quyền 4 vai trò (RBAC) với phân định rõ rệt quyền Quản trị (Admin) và Vận hành hỗ trợ (Service Manager). Phân tách luồng OTP đăng ký và quên mật khẩu trên Mobile. **Đăng nhập Google (Google Sign-In):** hỗ trợ tài khoản `auth_provider = 'google'` không cần mật khẩu, lưu `google_id` (sub) với ràng buộc duy nhất, check constraint đảm bảo mọi tài khoản đều có phương thức đăng nhập hợp lệ.
 - **Hồ sơ KYC Kỹ thuật viên bảo mật cao (Admin KYC):** Lưu trữ CCCD mặt trước, mặt sau và ảnh chân dung trên Cloudinary Authenticated Storage, cấp URL chữ ký điện tử có thời hạn (5 phút Signed Access URL), chỉ Admin và chính chủ mới có quyền truy cập (`fail-closed`). Đồng bộ trạng thái `VERIFIED` sang hồ sơ thợ và ghi nhật ký kiểm toán bất biến.
 - **Lưu trữ Bằng chứng & Đa phương tiện (Media Storage Migration):** Chuyển dịch toàn diện từ Supabase sang **Cloudinary Authenticated Private Storage** cho ảnh bằng chứng sửa chữa (`order-evidences`) và ảnh đặt lịch (`booking-photo-upload`). Định dạng tham chiếu bảo mật `cloudinary://evidence/...`, kiểm tra magic bytes của buffer tệp tin (JPEG, PNG, WebP) và hỗ trợ xóa ảnh (`DELETE /service-orders/:id/evidence/:evidenceId`).
 - **Thanh toán Trực tuyến VNPay (Online Payment Gateway):** Tích hợp cổng thanh toán VNPay cho hóa đơn dịch vụ (`POST /invoices/:id/vnpay-url`), kiểm tra chữ ký băm mật mã HMAC-SHA512, xử lý IPN webhook và return URL callback tự động đối soát, cập nhật hóa đơn sang `PAID` và hoàn tất đơn dịch vụ, kết hợp song song cùng phương thức **Thanh toán tiền mặt xác nhận 2 chiều (Cash Dual-Confirmation)**.
 - **Tra cứu Đơn hàng Công khai (Public Order Tracking):** Cung cấp endpoint công khai không cần đăng nhập (`GET /orders/track?code=...&phone=...`), cho phép khách hàng tra cứu tiến độ đơn hàng và vị trí di chuyển trực tiếp của thợ trên bản đồ số thông qua mã đơn và số điện thoại.
 - **Bán kính Hoạt động Thợ (Technician Service Radius):** Cho phép kỹ thuật viên tùy chỉnh bán kính phục vụ (`service_radius_km`) từ địa chỉ cơ sở, tích hợp vào thuật toán matching và điều phối đơn hàng.
 - **Xác minh Kỹ năng Chuyên môn Thợ (Skill Verification):** Thợ nộp chứng chỉ, bằng cấp theo từng dịch vụ đăng ký cung cấp; Admin thẩm định duyệt/từ chối; chỉ những kỹ năng đạt trạng thái `VERIFIED` mới đủ điều kiện xuất hiện trong danh sách ứng viên (Candidate Discovery) và nhận đơn.
-- **Admin Onboarding Thợ:** Admin có quyền tạo và kích hoạt tài khoản kỹ thuật viên trực tiếp từ màn hình Console Quản trị.
+- **Admin Onboarding Thợ:** Admin có quyền tạo và kích hoạt tài khoản kỹ thuật viên trực tiếp từ màn hình Console Quản trị. Thợ mới trải qua quy trình **Onboarding đa bước** (`onboarding_status`, `onboarding_step`) với đầy đủ thông tin cá nhân (ngày sinh, giới tính, CCCD), địa chỉ đầy đủ kèm tọa độ GPS (`latitude`, `longitude`).
 - **Điều phối thợ thủ công (Manual Assignment):** Cho phép Service Manager và Admin phân công hoặc ghi đè thợ nhận việc khi xảy ra tình huống khẩn cấp hoặc khách yêu cầu đặc biệt.
-- **Quản lý Sự cố & Hỗ trợ (Service Manager Support Cases):** Hàng đợi xử lý khiếu nại, giải quyết tranh chấp chênh lệch tiền mặt thanh toán tại chỗ (`CASH_DISPUTE`), ghi nhận lý do điều chỉnh và bảo vệ tính toàn vẹn của dữ liệu tài chính.
+- **Quản lý Sự cố & Hỗ trợ (Service Manager Support Cases):** Hàng đợi xử lý khiếu nại, giải quyết tranh chấp chênh lệch tiền mặt thanh toán tại chỗ (`CASH_DISPUTE`), ghi nhận lý do điều chỉnh và bảo vệ tính toàn vẹn của dữ liệu tài chính. Mở rộng thêm 4 loại khiếu nại: `property_damage`, `quality`, `pricing_dispute`, `conduct`; hỗ trợ đánh dấu khẩn cấp (`is_urgent`) và thời hạn phản hồi (`respond_by`). SM có thể giữ hoàn tất đơn (`hold_completion`), xác định bên chịu trách nhiệm (`liable_party`) và số tiền bồi thường.
 - **Danh mục Dịch vụ & Linh kiện chính hãng:** Phân cấp danh mục cha con, dịch vụ giá cố định (`FIXED_PRICE` - chặn thợ ghi đè giá sàn) và khảo sát báo giá (`INSPECTION_REQUIRED`), danh mục linh kiện FixHome (Part Catalog) chỉ quản lý thông số, giá niêm yết và thời hạn bảo hành (hoàn toàn không quản lý kho vận WMS).
 - **Sổ đăng ký Cấu hình Hệ thống (Business Config Registry):** Đăng ký tập trung các tham số vận hành (tỷ lệ hoa hồng, thời gian huỷ đơn tự động, số ca tối đa/thợ) có phân loại trạng thái hiệu lực (`ACTIVE`, `PENDING_WIRING`, `STALE_REVIEW`).
 - **Nhật ký Kiểm toán Vận hành (Audit Log):** Cơ chế ghi nhật ký bất biến (append-only) cho mọi thao tác nhạy cảm của Admin và Service Manager.
@@ -70,11 +71,16 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 - **Check-in GPS & Bằng chứng ảnh:** Geofencing xác minh thợ đã tới vị trí khách hàng (<500m); chốt chặn bắt buộc ảnh `BEFORE` trước khi sửa và ảnh `AFTER` trước khi hoàn tất.
 - **Báo giá & Phát sinh:** Báo giá khảo sát thực tế, khách duyệt/từ chối; chi phí phát sinh D-11 bất biến có liên kết phiên bản `supersedesId` và đính kèm ảnh bằng chứng hư hại thực tế.
 - **Bảo mật Tài chính & Thu công nợ:** Máy chủ làm thẩm quyền duy nhất xác thực thanh toán (`isOrderPaymentSatisfied`), tự động trích nợ hoa hồng PlatformDue (chặn điều phối thợ nếu nợ quá hạn).
+- **Ví Kỹ thuật viên (Technician Wallet):** Hệ thống ví số dư nội bộ cho kỹ thuật viên với các loại giao dịch: `TOP_UP`, `WITHDRAW`, `ONLINE_EARNING`, `PLATFORM_FEE`, `ADJUSTMENT`, `WITHDRAW_REFUND`. Idempotency key chống trùng giao dịch, ghi nhận `balance_before`/`balance_after` cho mọi lần thay đổi. Thợ mới được seed 200.000 VND.
+- **Rút tiền & Thanh toán tự động (Withdrawal Payout):** Thợ đăng ký tài khoản ngân hàng (`technician_bank_accounts`) với mã BIN, tạo yêu cầu rút tiền (chỉ 1 yêu cầu đang xử lý/ví). Tích hợp **payOS** để chi trả tự động với trạng thái `PENDING → PROCESSING → SUCCESS/REJECTED/FAILED`. Hỗ trợ hoàn tiền (`WITHDRAW_REFUND`) khi payout thất bại. Lưu `verified_full_name` tại thời điểm duyệt KYC phục vụ đối chiếu danh tính ngân hàng.
 - **Tiến trình đơn động (Real Timeline):** Đồng bộ trực tiếp từ `OrderStatusHistory`.
 - **Module Thông báo & Tin nhắn thời gian thực:** WebSocket Gateway Socket.IO phục vụ chat giữa Khách hàng và Kỹ thuật viên khi đơn đang hoạt động; hỗ trợ đồng bộ luồng chat trên ứng dụng di động với cơ chế tự phục hồi kết nối. **Icon Chuông Thông Báo (Notification Bell)** trên giao diện Customer với badge đỏ hiển thị số chưa đọc, tự động nhận thông báo khi thợ di chuyển, thợ đến nơi, yêu cầu nghiệm thu (auto-dispatch từ `ServiceOrdersService`); polling 30s qua Pinia store. Trang Trung tâm Thông báo (`/app/notifications`) với lọc theo danh mục người gửi (Thợ / SM / Admin), tìm kiếm và toggle chưa đọc.
 - **Gallery Ảnh Bằng Chứng Sửa Chữa:** Trang chi tiết đơn hàng (`CustomerOrderDetailPage`) hiển thị gallery ảnh trước/sau khi sửa chữa với tabs lọc (BEFORE / AFTER / ADDITIONAL), ghi chú của thợ, lightbox zoom modal và danh sách liệt kê chi tiết sửa chữa.
 - **Responsive Web & Mobile App:** Giao diện Vue 3 Responsive trên Web và ứng dụng di động React Native / Expo 57 trên iOS/Android.
-- **Đánh giá & Bảo hành:** Đánh giá thợ D-09 (duy nhất 1 lần/đơn), tạo yêu cầu bảo hành và quản lý phiếu bảo hành.
+- **Đánh giá & Bảo hành:** Đánh giá thợ D-09 (duy nhất 1 lần/đơn), tạo yêu cầu bảo hành và quản lý phiếu bảo hành. **Vòng đời Bảo hành nâng cao v2:** Status mới (`submitted → accepted → inspected → in_progress → awaiting_customer → disputed → resolved → rejected`), bảng `warranty_visits` cho lần kiểm tra thực tế (GPS check-in, bằng chứng, kết quả `covered_workmanship`/`covered_part`/`not_covered`), SM review với `final_result`, `sm_overrode_proposal`, thợ từ chối kèm `decline_reason_code`.
+- **Phiên Trò chuyện AI (AI Chat Sessions):** Lưu tóm tắt hội thoại AI vào `ai_chat_sessions`, đính kèm `ai_summary` (JSONB) vào booking khi đặt lịch từ AI. Tin nhắn tự động (`is_automated`) gửi lời chào thợ khi accept đơn.
+- **Danh mục Dịch vụ "Khác" (Catch-all Service):** Category `KHAC` + Service `DICH_VU_KHAC` cho công việc chưa có trong danh sách, pricing_mode `inspection_required`, cho phép khách mô tả nhu cầu tự do.
+- **Múi giờ Việt Nam (Database Timezone):** Chuẩn hóa session timezone PostgreSQL sang `Asia/Ho_Chi_Minh` để tất cả `::date` và `date_trunc` tính theo giờ Việt Nam.
 
 ### 5.2 Out of Scope (Ngoại phạm vi)
 - **Chat trực tiếp giữa Service Manager và Thợ:** Quản lý xử lý sự cố thông qua quy trình Support Case có lưu vết Audit thay vì nhắn tin trực tiếp.
@@ -87,15 +93,15 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 
 | # | Module | Backend | Web Frontend | Mobile App | Trạng thái |
 |---|--------|---------|--------------|------------|:---:|
-| 1 | Auth & JWT & RBAC | ✅ Dual-token, bcrypt, valid UUID v4 | ✅ Pinia auth store, session recovery | ✅ Zustand, SecureStore | **COMPLETED** |
-| 2 | User & Addresses | ✅ CRUD, default address, ownership | ✅ Customer Profile, tab Sổ địa chỉ | ✅ Profile screen | **COMPLETED** |
-| 3 | Technician Profile & KYC | ✅ Documents KYC, private storage signed URLs | ✅ Tech Profile, Verification upload | ✅ Profile screen, KYC upload | **COMPLETED** |
-| 4 | Technician Schedule | ✅ Ca làm việc trong tuần, slot check | ✅ Tech Schedule management | — | **COMPLETED** |
-| 5 | Service Catalog & Pricing | ✅ Fixed price & Inspection required | ✅ Service browsing, detail | ✅ Services list, detail | **COMPLETED** |
+| 1 | Auth & JWT & RBAC | ✅ Dual-token, bcrypt, valid UUID v4, **Google Sign-In** | ✅ Pinia auth store, session recovery, Google OAuth | ✅ Zustand, SecureStore | **COMPLETED** |
+| 2 | User & Addresses | ✅ CRUD, default address, ownership, date_of_birth, gender, citizen_id | ✅ Customer Profile, tab Sổ địa chỉ | ✅ Profile screen | **COMPLETED** |
+| 3 | Technician Profile & KYC | ✅ Documents KYC, private storage signed URLs, verified_full_name | ✅ Tech Profile, Verification upload | ✅ Profile screen, KYC upload | **COMPLETED** |
+| 4 | Technician Schedule | ✅ Ca làm việc trong tuần, slot check | ✅ Tech Schedule management | ✅ Schedule screen | **COMPLETED** |
+| 5 | Service Catalog & Pricing | ✅ Fixed price & Inspection required, **"Khác" catch-all** | ✅ Service browsing, detail | ✅ Services list, detail | **COMPLETED** |
 | 6 | Parts Catalog | ✅ FixHome vs Tech parts, warranty | ✅ Dynamic parts selection in quote | — | **COMPLETED** |
 | 7 | Service Areas | ✅ Chuẩn hóa mã tỉnh/huyện (HN, HCM) | ✅ Standardized district select UI | — | **COMPLETED** |
-| 8 | AI Diagnosis | ✅ Advisory stub, REST adapter | ✅ Diagnosis step in wizard | ✅ AI Diagnosis & Chat | **COMPLETED** |
-| 9 | Booking & Reschedule | ✅ 5-step booking, reschedule endpoint | ✅ 5-step Wizard, Reschedule modal | ✅ Booking flow, detail | **COMPLETED** |
+| 8 | AI Diagnosis | ✅ Advisory stub, REST adapter, **AI Chat Sessions persistence** | ✅ Diagnosis step in wizard, AI booking flow | ✅ AI Diagnosis & Chat | **COMPLETED** |
+| 9 | Booking & Reschedule | ✅ 5-step booking, reschedule, **ai_summary** attachment | ✅ 5-step Wizard, AI Booking, Reschedule modal | ✅ Booking flow, detail | **COMPLETED** |
 | 10 | Matching & Invitation | ✅ Sequential invite, row lock | ✅ Tech Invitations page (safe errors)| ✅ Tech Invitations screen | **COMPLETED** |
 | 11 | Service Order & State Machine | ✅ D-22 strict transitions, ownership | ✅ Real-time tracking, 0 mock data | ✅ Job tracking screen | **COMPLETED** |
 | 12 | GPS Geofence & Check-in | ✅ Lat/Long geofence verification | ✅ Tech Check-in GPS button | ✅ Check-in trigger | **COMPLETED** |
@@ -107,25 +113,31 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 | 18 | Real Order Timeline | ✅ OrderStatusHistory real data | ✅ Dynamic timeline (bỏ hardcode) | ✅ Dynamic timeline | **COMPLETED** |
 | 19 | Notifications Module | ✅ In-app notifications API, unread | ✅ Notification bell badge & center | ✅ Notifications screen | **COMPLETED** |
 | 20 | Reviews & Ratings | ✅ D-09 single review, average rating | ✅ Post-service review modal | ✅ Review screen | **COMPLETED** |
-| 21 | Warranties & Claims | ✅ Warranty policy & claim flow | ✅ Customer Warranties page | — | **COMPLETED** |
+| 21 | Warranties & Claims | ✅ **Warranty lifecycle v2**, visits, SM review, dispute escalation | ✅ Customer Warranties page, **Console Warranty page** | ✅ Warranties screen | **COMPLETED** |
 | 22 | Role Dashboards | ✅ 4 role-tailored dashboard metrics | ✅ Customer & Tech dashboards | ✅ Customer/Tech home | **COMPLETED** |
-| 23 | Support Cases & Cash Disputes | ✅ Support Cases module, resolve & escalate | ✅ Support Queue & Cash Dispute Detail | — | **COMPLETED** |
-| 24 | Admin KYC Verification Review | ✅ Admin review, VERIFIED sync, signed media | ✅ Admin Verifications page | — | **COMPLETED** |
+| 23 | Support Cases & Cash Disputes | ✅ Support Cases module, **4 complaint types**, is_urgent, hold_completion | ✅ Support Queue, Detail, Cash Dispute, **Cancellations & Strikes** | — | **COMPLETED** |
+| 24 | Admin KYC Verification Review | ✅ Admin review, VERIFIED sync, signed media | ✅ Admin Verifications, **Console Technicians** | — | **COMPLETED** |
 | 25 | Admin Part Catalog Management | ✅ FixHome parts CRUD, pricing, warranty | ✅ Admin Parts Catalog page | — | **COMPLETED** |
 | 26 | System Config Registry | ✅ Centralized config, effectivity status | ✅ Admin Config page | — | **COMPLETED** |
 | 27 | Operational Audit Log | ✅ Append-only audit logger & controller | ✅ Admin Audit Logs page | — | **COMPLETED** |
 | 28 | Server-Authoritative Finance | ✅ Finance module, payment satisfaction port | ✅ Admin Platform Dues & Finance Audit | — | **COMPLETED** |
 | 29 | Technician Skill Verification | ✅ Multi-service skill verification, admin approval | ✅ Tech Profile skill upload, Admin review page | — | **COMPLETED** |
-| 30 | Admin Technician Onboarding | ✅ Create technician account & initial profile | ✅ Admin Users onboard modal | — | **COMPLETED** |
+| 30 | Admin Technician Onboarding | ✅ Create technician, **multi-step onboarding flow** | ✅ Admin Users onboard modal, **TechnicianOnboardingPage** | ✅ Onboarding screen | **COMPLETED** |
 | 31 | Manual Technician Assignment | ✅ SM/Admin manual assign & override | ✅ Console Bookings assign board | — | **COMPLETED** |
-| 32 | Real-time Messaging (Chat) | ✅ Socket.IO Gateway, conversation entity | ✅ MessagesPage.vue | ✅ ChatList & ChatThread | **COMPLETED** |
+| 32 | Real-time Messaging (Chat) | ✅ Socket.IO Gateway, conversation entity, **is_automated** | ✅ MessagesPage.vue | ✅ ChatList & ChatThread | **COMPLETED** |
 | 33 | Cloudinary Private Storage | ✅ Authenticated uploads, 5-min signed URLs, delete | ✅ Direct upload in wizard & job detail | ✅ Multipart upload fix | **COMPLETED** |
 | 34 | VNPay Payment Gateway | ✅ URL generation, HMAC-SHA512, IPN & return auto-complete | ✅ VNPay return polling & redirect | — | **COMPLETED** |
 | 35 | Public Order Tracking | ✅ Public endpoint `/orders/track` by code & phone | ✅ Public tracking page & live map | — | **COMPLETED** |
 | 36 | Technician Service Radius | ✅ `service_radius_km` on profile & candidate matching | ✅ Radius slider/picker in Tech Profile | — | **COMPLETED** |
 | 37 | Customer Notification Center | ✅ Auto-dispatch notifications, `POST /notifications` role guard | ✅ Notification bell badge & dropdown, `/app/notifications` page | ✅ Notifications screen | **COMPLETED** |
 | 38 | Order Evidence Gallery & Lightbox | ✅ `GET /service-orders/:id/evidence`, Cloudinary signed URLs | ✅ Evidence tabs (BEFORE/AFTER/ADDITIONAL), notes, lightbox zoom modal | ✅ Image picker/preview | **COMPLETED** |
-| 39 | Parts Request & Lifecycle v4.1 | ✅ Part request flow, QR handover, TEST_SCAN bypass, usage resolution | ✅ SM parts handover, Tech additional cost request integration | — | **COMPLETED** |
+| 39 | Parts Request & Lifecycle v4.1 | ✅ Part request flow, QR handover, TEST_SCAN bypass, usage resolution | ✅ SM parts handover, Tech additional cost request integration | ✅ Parts section | **COMPLETED** |
+| 40 | **Technician Wallet** | ✅ Wallet, WalletTransaction, idempotency, settlement | ✅ **TechnicianWalletPage**, earnings | ✅ **Wallet screen** | **COMPLETED** |
+| 41 | **Withdrawal & Payout** | ✅ WithdrawalRequest, BankAccount, **payOS auto-payout** | ✅ **Console Wallets page**, withdrawal management | — | **COMPLETED** |
+| 42 | **Google Sign-In** | ✅ GoogleIdentityService, GoogleRedirectService, auth_provider | ✅ Login with Google | ✅ Google login | **COMPLETED** |
+| 43 | **Warranty Visits & SM Review** | ✅ warranty_visits table, GPS check-in, inspection result, SM final_result | ✅ Console Warranty page | — | **COMPLETED** |
+| 44 | **AI Chat Sessions** | ✅ ai_chat_sessions, ai_summary on bookings | ✅ AI booking flow (`/app/bookings/ai`) | ✅ AI Chat screen | **COMPLETED** |
+| 45 | **Database Timezone VN** | ✅ `Asia/Ho_Chi_Minh` session default | — | — | **COMPLETED** |
 
 ---
 
@@ -143,7 +155,8 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
                                            v
                    +-----------------------------------------------+
                    |              NestJS Backend API               |
-                   |       (18 Modules, TypeORM, Vitest, Guards)           |
+                   |  (payOS Payout Gateway)                       |
+                   |       (29 Modules, TypeORM, Vitest, Guards)           |
                    +-----------+-----------------------+-----------+
                                |                       |
                   TypeORM / SQL|                       | HTTP Client (Axios)
@@ -199,7 +212,7 @@ Chủ nhà gặp nhiều khó khăn khi tìm kiếm thợ sửa chữa đáng ti
 
 ## 9. Database Migrations History
 
-Toàn bộ **33 migrations** được quản lý chặt chẽ qua TypeORM trên PostgreSQL 16:
+Toàn bộ **48 migrations** được quản lý chặt chẽ qua TypeORM trên PostgreSQL 16:
 
 1. `1725888000000-InitialBaseline.ts` (Users, Roles, RefreshTokens)
 2. `1725889000000-ServiceCatalogAndVerification.ts` (Categories, Services, KYC)
@@ -234,6 +247,21 @@ Toàn bộ **33 migrations** được quản lý chặt chẽ qua TypeORM trên 
 31. `1790000000004-TechnicianServiceRadius.ts` (Technician service radius `service_radius_km`)
 32. `1790000000005-PartRequestsAndLifecycle.ts` (Parts requests, items, fulfillment, QR handover và USED/RETURNED lifecycle)
 33. `1790000000006-PartRequestIntegrity.ts` (FK/check/unique constraints cho Parts, chỉ mục ngày tạo và `invoices.shipping_fee`)
+34. `1790000000007-GoogleSignIn.ts` (Google OAuth: `google_id`, `auth_provider`, password_hash nullable, credential check constraint)
+35. `1790000000008-TechnicianWalletCore.ts` (Wallets, WalletTransactions, WithdrawalRequests, seed 200k VND cho thợ hiện hữu)
+36. `1790000000010-AddWalletTopUpToPaymentPurposeEnum.ts` (Enum WALLET_TOP_UP cho payment purpose)
+37. `1790000000011-PaymentTargetConstraintWalletTopUp.ts` (Check constraint target cho wallet top-up)
+38. `1790000000012-TechnicianOnboardingFields.ts` (Users: date_of_birth, gender, citizen_id_number; TechProfiles: onboarding_status, step, full_address, lat/lng)
+39. `1790000000013-SupportCaseComplaintFields.ts` (Mở rộng support_case_type_enum: property_damage, quality, pricing_dispute, conduct; is_urgent, respond_by)
+40. `1790000000014-WarrantyClaimReconcile.ts` (Warranty claims v2: technician_id, description, submitted_at, evidence_refs, customer_response, status enum mới 8 trạng thái)
+41. `1790000000015-WarrantyVisits.ts` (Bảng warranty_visits: scheduled, checked_in, inspected, completed, cancelled; inspection result enum)
+42. `1790000000016-ManagerReviewFields.ts` (SM review: final_result, sm_overrode_proposal, reviewed_by_manager_id; support_cases: hold_completion, liable_party, amount)
+43. `1790000000020-WithdrawalPayoutEnums.ts` (Enum mới: PROCESSING cho withdrawal, WITHDRAW_REFUND cho wallet transaction)
+44. `1790000000021-WithdrawalPayout.ts` (technician_bank_accounts, payOS payout columns, verified_full_name trên KYC)
+45. `1790000000022-ResetUnfundedTechnicianWallets.ts` (Reset ví thợ unfunded)
+46. `1790000000023-DatabaseTimezoneVietnam.ts` (Database timezone `Asia/Ho_Chi_Minh`)
+47. `1790000000024-AiChatSessionsAndAutomatedMessages.ts` (ai_chat_sessions, bookings.ai_summary, messages.is_automated)
+48. `1790000000025-OtherServiceCatalog.ts` (Danh mục "Khác" + dịch vụ DICH_VU_KHAC catch-all)
 
 ---
 
@@ -242,14 +270,24 @@ Toàn bộ **33 migrations** được quản lý chặt chẽ qua TypeORM trên 
 - **Backend (NestJS):**
   - Typecheck: `tsc --noEmit` -> **0 errors**
   - Lint: `oxlint` -> **0 warnings, 0 errors**
-  - Unit Tests: `vitest run` -> **80/80 test suites passed, 623/623 tests passed (100% green)**
+  - Unit Tests: `vitest run` -> tests pass (continually growing)
   - Build: `nest build` -> **PASS**
+  - Modules: **29 NestJS modules** registered
 - **Web Frontend (Vue 3):**
   - Typecheck: `vue-tsc -b` -> **0 errors**
   - Lint: `eslint .` -> **0 warnings, 0 errors**
-  - Unit Tests: `vitest run` -> **39/39 test files passed, 335/335 tests passed (100% green)**
-  - Build: `vite build` -> **PASS** (~4.5s)
+  - Unit Tests: `vitest run` -> tests pass (continually growing)
+  - Build: `vite build` -> **PASS**
+  - Pages: **57 Vue pages** across 7 domains (public, auth, customer, technician, console/admin, chat, dashboard)
   - Storage Isolation: `vi.clearAllMocks()` bảo đảm độc lập tuyệt đối giữa các test suite
+- **Mobile (React Native / Expo SDK 57):**
+  - Screens: **38 screens** (customer, technician, auth, chat)
+  - Test files: **59 test files** (Jest + jest-expo)
+  - Lint: `expo lint --max-warnings=0`
+  - Typecheck: `tsc --noEmit`
+- **Database:**
+  - **48 TypeORM migrations** chạy trên PostgreSQL 16
+  - Timezone chuẩn hóa: `Asia/Ho_Chi_Minh`
 - **Data Integrity:**
   - **Zero Mock Data:** Tất cả dữ liệu Khách hàng và Thợ hiển thị trên Web đều gọi API thực từ Backend.
   - **Zero Broken Routes:** Đã kiểm tra toàn diện, chuyển hướng chính xác các đường dẫn.

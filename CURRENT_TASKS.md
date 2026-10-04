@@ -1,23 +1,23 @@
 # FixHome — Current Tasks
 
-> Last updated: 2026-09-25 | Phase: Notification Center, Evidence Gallery Suite & Parts Request Lifecycle (Master Spec v2.1)
+> Last updated: 2026-10-04 | Phase: Wallet, Google Sign-In, Warranty Visits, Onboarding & AI Chat Sessions (Master Spec v2.2)
 
 ---
 
 ## Current Phase
 
-**Notification Center, Evidence Suite & Ecosystem Hardening Complete** — Aligned with **Master Project Specification v2.1**.
+**Wallet, Google Sign-In, Warranty Visits, Onboarding & AI Chat Sessions Complete** — Aligned with **Master Project Specification v2.2**.
 Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
+- **Technician Wallet System**: Internal balance wallet (`wallets`, `wallet_transactions`) with idempotency keys, settlement service for online earning and platform fee deduction, bank account registration, and withdrawal request management.
+- **Withdrawal Payout via payOS**: Automated bank transfer payout through payOS integration with states `PENDING → PROCESSING → SUCCESS/REJECTED/FAILED`. Auto-refund on payout failure (`WITHDRAW_REFUND` transaction type). Console Wallets page for SM/Admin management.
+- **Google Sign-In Authentication**: OAuth2 identity verification via `GoogleIdentityService` and `GoogleRedirectService`. Users table supports `auth_provider = 'google'` with nullable `password_hash` and `google_id` unique constraint.
+- **Technician Onboarding Multi-step Flow**: New `TechnicianOnboardingPage` with `onboarding_status` tracking (`not_started` → complete), step-by-step profile completion including personal info (date_of_birth, gender, citizen_id_number), full address with GPS coordinates.
+- **Warranty Lifecycle v2 with Visits**: Complete warranty claim rework with 8-status enum (`submitted → accepted → inspected → in_progress → awaiting_customer → disputed → resolved → rejected`), `warranty_visits` table for on-site inspection with GPS check-in and evidence, SM review with `final_result` and `sm_overrode_proposal`.
+- **Support Case Complaint Expansion**: 4 new complaint types (`property_damage`, `quality`, `pricing_dispute`, `conduct`), `is_urgent` flag, `respond_by` deadline. SM can `hold_completion`, assign `liable_party` and compensation `amount`.
+- **AI Chat Session Persistence**: `ai_chat_sessions` table stores running summaries of AI conversations, `ai_summary` JSONB field attached to bookings when created from AI flow, `is_automated` flag for system-generated greeting messages.
+- **"Other" Catch-all Service Category**: Category `KHAC` + Service `DICH_VU_KHAC` for unlisted repair work, `inspection_required` pricing mode.
+- **Database Timezone Standardization**: PostgreSQL session timezone set to `Asia/Ho_Chi_Minh` for all date operations.
 - **Customer Notification Bell & Center**: Header icon with unread badge, popover dropdown (All/Unread), auto mark read, polling 30s, full-page notification center (`/app/notifications`) with sender categorization (Technician, SM, Admin, System).
-- **Lifecycle Auto-dispatch Notifications**: Backend automatically sends notifications to customer when technician is en route (`TECHNICIAN_EN_ROUTE`), arrives (`TECHNICIAN_ARRIVED`), and requests completion (`COMPLETION_REQUESTED`).
-- **Role-Guarded Notifications API**: `POST /notifications` with `CreateNotificationDto` validation restricted to `ADMIN`, `SERVICE_MANAGER`, and `TECHNICIAN`.
-- **Order Evidence Gallery & Lightbox**: Customer order detail page displays categorized evidence photos (BEFORE, AFTER, ADDITIONAL) with technician notes, timestamp, and high-res lightbox modal zoom.
-- **Detailed Repair Itemization**: Itemized breakdown table showing labor items, replacement parts with warranty durations, approved additional costs, and a grand summary payment box.
-- **Parts Request Lifecycle v4.1**: 791 items parts catalog dataset, QR handover scanning with `TEST_SCAN` bypass for dev testing, item usage (used/returned) tracking.
-- **Cloudinary Authenticated Private Storage**: Authenticated storage with time-limited signed URLs (`expires_at`, 5 minutes expiration) and magic-byte MIME validation.
-- **VNPay Payment Gateway Integration**: Automated IPN webhook and return URL auto-reconciliation, with automatic invoice and order completion.
-- **Public Order Tracking**: Public tracking endpoint (`GET /orders/track?code=...&phone=...`) allowing customers to track order progress and technician live location on a real-time map without login.
-- **Quality Gates**: **623 backend unit tests (80 suites)** and **335 web tests (39 suites)** passing (100% green), 0 lint errors, 0 typecheck errors, successful production builds.
 
 ---
 
@@ -25,15 +25,15 @@ Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Backend | ✅ 623/623 unit tests pass (80 suites) | 0 lint w/e, 0 typecheck errors, Cloudinary private storage, VNPay, auto-dispatch notifs |
-| Web | ✅ 335/335 unit tests pass (39 suites) | 33+ pages, Notification Bell, Evidence Lightbox, Public tracking live map |
-| Mobile | ✅ Clean & Stable | Expo SDK 57, Realtime Chat Socket thread, separate auth OTP/reset screens |
+| Backend | ✅ Tests pass, 29 modules | 0 lint w/e, 0 typecheck errors, Cloudinary, VNPay, Wallet, payOS payout, Google Sign-In |
+| Web | ✅ Tests pass, 57 pages | Notification Bell, Evidence Lightbox, Wallet, Onboarding, Console Warranty, AI Booking |
+| Mobile | ✅ 38 screens, 59 test files | Expo SDK 57, Wallet, Chat, AI Chat, Onboarding |
 | AI Service | ✅ Adapter API & Advisory Stub | FastAPI service, CI pipeline (pytest, flake8, mypy), YOLO11s + RAG + Qwen2.5-VL |
-| Database | ✅ 33 Migrations Executed | PostgreSQL 16, deduplication, service radius, parts request integrity |
+| Database | ✅ 48 Migrations Executed | PostgreSQL 16, timezone `Asia/Ho_Chi_Minh`, warranty_visits, wallets, bank_accounts |
 | Storage | ✅ Cloudinary Private Authenticated | Signed access URLs (5-minute expiration), JPEG/PNG/WebP magic-byte validation |
-| Payments | ✅ VNPay + Cash Dual-Confirmation | Automated VNPay reconciliation + server-authoritative cash settlement |
-| Testing | ✅ Comprehensive (958 total tests) | 623 backend unit tests + 335 web tests passing (100% green) |
-| Documentation | ✅ Up-to-date (v2.1) | Master Spec, API Changelog, Core Migrations, System Ecosystem synced |
+| Payments | ✅ VNPay + Cash + Wallet + payOS | VNPay reconciliation, cash settlement, wallet top-up, automated bank payout |
+| Testing | ✅ Comprehensive (growing) | Backend unit tests + Web tests + Mobile 59 test files |
+| Documentation | ✅ Up-to-date (v2.2) | Master Spec, API Changelog, Core Migrations, System Ecosystem synced |
 | CI / DevOps | ✅ Docker & independent CI | Dockerfiles + GitHub Actions CI workflows across all repos |
 
 ---
@@ -119,6 +119,27 @@ Recent major enhancements across all 4 platforms (Backend, Web, Mobile, AI):
 | **D4-06** | **Lightbox Zoom Modal for Evidence Photos** | **COMPLETED** | `Frontend: CustomerOrderDetailPage.vue` | **PASS** (Full-screen backdrop blur modal, high-res zoom, evidence type badges, detailed notes) |
 | **D4-07** | **Detailed Repair Itemization Breakdown** | **COMPLETED** | `Frontend: CustomerOrderDetailPage.vue` | **PASS** (Labor items table, parts with warranty days, approved additional costs, grand summary box) |
 | **D4-08** | **Parts Catalog & Lifecycle Integration** | **COMPLETED** | `Backend: part-requests, seed runner, migration 33`<br>`Frontend: orders.api.ts, quotation flow` | **PASS** (791 items parts catalog dataset, TEST_SCAN token bypass for dev, QR handover lifecycle) |
+
+---
+
+## Dev 5 Wallet, Auth, Warranty & Platform Expansion Tasks (Completed 2026-10-04)
+
+| Task ID | Task Title | Status | Components Modified / Created | Verification |
+| :--- | :--- | :---: | :--- | :---: |
+| **D5-01** | **Technician Wallet Core** | **COMPLETED** | `Backend: wallet.module.ts, wallet.service.ts, settlement.service.ts, entities/`<br>`Frontend: TechnicianWalletPage.vue, wallet.api.ts`<br>`Mobile: TechnicianWalletScreen.tsx` | **PASS** (Wallet balance, transactions, idempotency, seed 200k VND) |
+| **D5-02** | **Withdrawal & Bank Account Registration** | **COMPLETED** | `Backend: bank-account.service.ts, withdrawal-payout.service.ts, technician-wallet.controller.ts`<br>`Frontend: ConsoleWalletsPage.vue` | **PASS** (Bank account CRUD, single pending withdrawal per wallet) |
+| **D5-03** | **payOS Automated Payout** | **COMPLETED** | `Backend: withdrawal-payout.service.ts, payout/payout-provider.factory.ts`<br>`Frontend: ConsoleWalletsPage.vue, admin-wallet.controller.ts` | **PASS** (PENDING → PROCESSING → SUCCESS/FAILED, auto-refund on failure) |
+| **D5-04** | **Google Sign-In Authentication** | **COMPLETED** | `Backend: google-identity.service.ts, google-redirect.service.ts, auth.controller.ts`<br>`Frontend: LoginPage.vue`<br>`Migration: 1790000000007-GoogleSignIn.ts` | **PASS** (auth_provider='google', password_hash nullable, google_id unique) |
+| **D5-05** | **Technician Onboarding Multi-step** | **COMPLETED** | `Backend: technicians.service.ts`<br>`Frontend: TechnicianOnboardingPage.vue`<br>`Mobile: TechnicianOnboardingScreen.tsx`<br>`Migration: 1790000000012-TechnicianOnboardingFields.ts` | **PASS** (onboarding_status, step, DOB, gender, citizen_id, GPS coords) |
+| **D5-06** | **Warranty Lifecycle v2 & Claim Reconcile** | **COMPLETED** | `Backend: service-orders.service.ts`<br>`Frontend: CustomerWarrantiesPage.vue, ConsoleWarrantyPage.vue`<br>`Mobile: CustomerWarrantiesScreen.tsx`<br>`Migrations: 1790000000014, 1790000000015` | **PASS** (8-status enum, warranty_visits table, inspection results) |
+| **D5-07** | **Warranty Visits & GPS Check-in** | **COMPLETED** | `Backend: service-orders.service.ts`<br>`Frontend: ConsoleWarrantyPage.vue`<br>`Migration: 1790000000015-WarrantyVisits.ts` | **PASS** (scheduled → checked_in → inspected → completed/cancelled) |
+| **D5-08** | **SM Review & Manager Override** | **COMPLETED** | `Backend: service-orders.service.ts, support-cases.service.ts`<br>`Frontend: ConsoleWarrantyPage.vue`<br>`Migration: 1790000000016-ManagerReviewFields.ts` | **PASS** (final_result, sm_overrode_proposal, hold_completion, liable_party) |
+| **D5-09** | **Support Case Complaint Expansion** | **COMPLETED** | `Backend: support-cases.service.ts`<br>`Frontend: SupportQueuePage.vue, SupportDetailPage.vue, ConsoleCancellationsPage.vue, ConsoleStrikesPage.vue`<br>`Migration: 1790000000013-SupportCaseComplaintFields.ts` | **PASS** (4 new complaint types, is_urgent, respond_by) |
+| **D5-10** | **AI Chat Sessions & Automated Messages** | **COMPLETED** | `Backend: ai-diagnosis module`<br>`Frontend: NewBookingWizardPage.vue (AI booking flow)`<br>`Mobile: CustomerAIChatScreen.tsx`<br>`Migration: 1790000000024-AiChatSessionsAndAutomatedMessages.ts` | **PASS** (ai_chat_sessions, ai_summary on bookings, is_automated messages) |
+| **D5-11** | **"Other" Catch-all Service Category** | **COMPLETED** | `Backend: Migration 1790000000025-OtherServiceCatalog.ts` | **PASS** (Category KHAC + Service DICH_VU_KHAC, inspection_required) |
+| **D5-12** | **Database Timezone Vietnam** | **COMPLETED** | `Backend: Migration 1790000000023-DatabaseTimezoneVietnam.ts` | **PASS** (Asia/Ho_Chi_Minh session default) |
+| **D5-13** | **Wallet Top-Up Payment Integration** | **COMPLETED** | `Backend: Migrations 1790000000010, 1790000000011`<br>`Frontend: TechnicianWalletPage.vue` | **PASS** (WALLET_TOP_UP payment purpose enum, target constraints) |
+| **D5-14** | **Reset Unfunded Wallets** | **COMPLETED** | `Backend: Migration 1790000000022-ResetUnfundedTechnicianWallets.ts` | **PASS** (Reset ví thợ unfunded) |
 
 ---
 
