@@ -10,10 +10,10 @@
 
 ---
 
-## Key Documents (Tài liệu Trọng tâm v2.1)
+## Key Documents (Tài liệu Trọng tâm v2.2)
 
 - [SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md](architecture/SYSTEM_ECOSYSTEM_AND_FILE_STRUCTURE.md) — **Kiến trúc Hệ thống & Cấu trúc Chi tiết Từng File (BE, FE, AI, Mobile)**
-- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) — **Single Source of Truth** (Đặc tả tổng quan kiến trúc & hệ thống v2.1)
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) — **Single Source of Truth** (Đặc tả tổng quan kiến trúc & hệ thống v2.2)
 - [Master Project Specification v1.4](docs/FIXHOME-Master-Project-Specification-v1.4.md) — Tài liệu nghiệp vụ & kỹ thuật chuẩn nhóm
 - [Dev 1 Implementation Plan v1.4](docs/FIXHOME-DEV1-IMPLEMENTATION-PLAN-v1.4.md) — Kế hoạch thực thi & bàn giao chi tiết của Dev 1
 - [Dev 1 Fix & Audit Report](docs/DEV1-FIX-REPORT.md) — Báo cáo nghiệm thu 24 task sửa lỗi, dọn dẹp Chat và kiểm thử Dev 1
@@ -49,9 +49,11 @@
 ```text
 Web (Vue 3 + Vite) ────────┐
 (Customer, Tech & Console)  │
-                            ├──> NestJS Backend API ───> PostgreSQL 16 (33 Migrations)
+                            ├──> NestJS Backend API ───> PostgreSQL 16 (48 Migrations)
 Mobile (React Native Expo) ──┤    (State Machine D-22,   ├──> Cloudinary Authenticated Storage
-(Customer & Tech App)       │     VNPay + Cash Dual,     └──> WebSocket Realtime Chat Gateway
+(Customer & Tech App)       │     VNPay + Cash Dual,     ├──> payOS Automated Payout
+                            │     Wallet + payOS,         └──> WebSocket Realtime Chat Gateway
+                            │     Google Sign-In,
                             │     Zero Mock Data, 5-Layer Guards)
                             │
                             └──> FastAPI AI Service ───> YOLO11s (22 thiết bị) + Qwen2.5-VL + RAG
@@ -63,11 +65,11 @@ Mobile (React Native Expo) ──┤    (State Machine D-22,   ├──> Cloudi
 
 | Thành phần | Công nghệ chính | Trạng thái Chất lượng (Quality Gate) |
 | :--- | :--- | :--- |
-| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16, Cloudinary, VNPay | **623/623 unit tests pass** (80 suites), 0 lint error (`oxlint`), 0 type error, build dist pass |
-| **Web** | Vue 3, Vite, TailwindCSS, Pinia, TypeScript | **335/335 tests pass** (39 suites), 0 lint error, 0 type error, Vite build pass |
-| **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | Auth OTP/Password reset split, Realtime Chat Socket thread, KYC upload resilience |
-| **AI Service** | FastAPI, Python 3.11, vLLM, YOLO11s, Qwen2.5-VL | 4-tier engine: Hội thoại -> Thị giác -> Tri thức (3.319 đoạn) -> Ngôn ngữ (CI tooling & governance) |
-| **Database** | PostgreSQL 16 (Docker) | **33 migrations** chạy trơn tru, unique constraint deduplication |
+| **Backend** | NestJS 10, TypeScript, TypeORM, PostgreSQL 16, Cloudinary, VNPay, **payOS**, **Google Auth** | Tests pass, 0 lint error (`oxlint`), 0 type error, build dist pass, **29 NestJS modules** |
+| **Web** | Vue 3, Vite, TailwindCSS, Pinia, TypeScript | Tests pass, 0 lint error, 0 type error, Vite build pass, **57 pages** |
+| **Mobile** | React Native (Expo SDK 57), TypeScript, Zustand | **38 screens**, **59 test files**, Auth OTP/Google Sign-In, Wallet, AI Chat, Onboarding |
+| **AI Service** | FastAPI, Python 3.11, vLLM, YOLO11s, Qwen2.5-VL | 4-tier engine: Hội thoại -> Thị giác -> Tri thức (3.319 đoạn) -> Ngôn ngữ, **AI Chat Sessions** |
+| **Database** | PostgreSQL 16 (Docker) | **48 migrations** chạy trơn tru, timezone `Asia/Ho_Chi_Minh`, wallets, warranty_visits |
 | **Storage** | Cloudinary Private Authenticated Storage | Signed URLs có thời hạn (5 phút), whitelist JPEG/PNG/WebP magic bytes |
 
 ---
